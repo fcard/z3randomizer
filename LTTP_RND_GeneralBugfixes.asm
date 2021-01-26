@@ -196,6 +196,7 @@ incsrc servicerequest.asm
 incsrc elder.asm
 incsrc toast.asm
 incsrc darkroomitems.asm
+incsrc rings.asm
 warnpc $A58000
 
 ;org $228000 ; contrib area
@@ -269,6 +270,11 @@ org $31E000
 InvertedCastleHole: ;address used by front end. DO NOT MOVE!
 incbin sheet73.gfx
 warnpc $31E501
+
+org $31F000
+GFX_Rings:
+incbin menurings.gfx
+warnpc $320000
 
 org $338000
 GFX_HUD_Palette:
@@ -432,8 +438,14 @@ GetAnimatedSpriteTile_variable:
 org $00D84E
 Attract_DecompressStoryGfx:
 
+org $00E1DB
+InitTilesets:
+
 org $00E529
 LoadSelectScreenGfx:
+
+org $00E7DE
+Decomp.begin:
 
 org $00F945
 PrepDungeonExit:
@@ -617,6 +629,12 @@ RestoreNormalMenu:
 
 org $0DE395
 Equipment_SearchForEquippedItemLong:
+
+org $0DE6B6
+DrawAbilityText:
+
+org $0DE7B7
+DrawAbilityIcons:
 
 org $0DE9C8
 DrawProgressIcons: ; this returns short

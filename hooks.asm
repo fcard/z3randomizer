@@ -2550,3 +2550,58 @@ CheckIfReading:
     CPX #$04
     RTS
 ;================================================================================
+
+;--------------------------------------------------------------------------------
+; Decomp
+;--------------------------------------------------------------------------------
+org $00FDEE ; Mirror_InitHdmaSettings
+    JML Mirror_InitHdmaSettingsAux
+    DecompGfx:
+        JSR Decomp.begin
+    RTL
+
+org $0089E2 ; Bank00.asm:1344 - LDA.b #$80 : STA $2115
+    JSL ExtraMenuNMIUpdate
+    NOP
+
+;org $028187 ; Bank02.asm:421 - JSL InitTilesets
+;  JSL InitTilesets_LoadExtraMenuGfx
+
+;--------------------------------------------------------------------------------
+; Rings
+;--------------------------------------------------------------------------------
+org $0DDDC3 ; JSR DrawAbilityText
+JSL DrawLowerItemBox
+NOP #2
+
+org $0DDF15 ; equipment.asm:450 - NormalMenu: INC $207 : LDA $F0
+    JSL MenuLoop
+    NOP
+
+org $0DDEA5 ; equipment.asm:450 - NormalMenu: INC $207 : LDA $F0
+    JSL NoEquip
+    RTS
+
+org $0DE7B6 ; change DrawAbilityText's RTS to a RTL
+RTL
+
+org $0DE819 ; change DrawAbilityIcons' RTS to a RTL
+RTL
+
+
+;--------------------------------------------------------------------------------
+; Rupee Charm
+;--------------------------------------------------------------------------------
+org $06D1D2 ; Rupees dropped in the world
+JSL AddCollectedRupees
+
+org $09ADA0 ; Rupees from chests
+JSL AddChestRupees
+NOP #3
+
+
+;org $06D1D2 ; Rupees from arrow game
+;JSL AddCollectedRupees
+
+
+;================================================================================
