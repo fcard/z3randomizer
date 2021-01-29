@@ -4,7 +4,7 @@
 org $308000 ; bank #$30 ; PC 0x180000 - 0x180006 [encrypted]
 HeartPieceIndoorValues:
 HeartPiece_Forest_Thieves:
-	db #$17 ; #$17 = Heart Piece
+	db #$B0 ; #$17 = Heart Piece
 HeartPiece_Lumberjack_Tree:
 	db #$17
 HeartPiece_Spectacle_Cave:
@@ -1363,6 +1363,8 @@ db $04
 ;AD - Small Key of Ganon's Tower
 ;AE - Reserved
 ;AF - Generic Small Key
+
+;B0 - Rupee Ring
 ;================================================================================
 ;;Residual Portal
 ;org $0283E0 ; PC 0x103E0 (Bank02.asm:816) (BNE)

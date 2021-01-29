@@ -274,6 +274,12 @@ warnpc $31E501
 org $31F000
 GFX_Rings:
 incbin menurings.gfx
+warnpc $31F400
+
+org $31F400
+GFX_RingsOverworld:
+;incbin newitems.gfx
+incbin rings.gfx
 warnpc $320000
 
 org $338000
@@ -402,6 +408,13 @@ org $00D17C ; 0x517C - HUD Main M
 db GFX_HUD_Main>>8
 org $00D25B ; 0x525B - HUD Main L
 db GFX_HUD_Main
+
+org $C08000 ; Rings H
+db GFX_RingsOverworld>>16
+org $C08040 ; Rings M
+db GFX_RingsOverworld>>8
+org $C08080 ; Rings L
+db GFX_RingsOverworld
 ;================================================================================
 org $008781
 UseImplicitRegIndexedLocalJumpTable:
@@ -443,6 +456,9 @@ InitTilesets:
 
 org $00E529
 LoadSelectScreenGfx:
+
+org $00E7B2
+Decomp.spr_variable:
 
 org $00E7DE
 Decomp.begin:

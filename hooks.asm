@@ -854,15 +854,15 @@ JSL.l AddReceivedItemExpanded
 
 org $098611 ; 48611 - ancilla_init.asm:720 (LDA .item_target_addr+0, X)
 LDA.w AddReceivedItemExpanded_item_target_addr+0, X
-org $098616 ; 48616 - ancilla_init.asm:721 (LDA .item_target_addr+1, X)
+org $098616 ; 48611 - ancilla_init.asm:720 (LDA .item_target_addr+1, X)
 LDA.w AddReceivedItemExpanded_item_target_addr+1, X
 org $09861F ; 4861F - ancilla_init.asm:724 (LDA .item_values, Y)
 LDA.w AddReceivedItemExpanded_item_values, Y
 
-org $098627 ; 48627 - ancilla_init.asm:731 (LDA .item_target_addr+0, X)
-LDA.w AddReceivedItemExpanded_item_target_addr+0, X
-org $09862C ; 4862C - ancilla_init.asm:722 (LDA .item_target_addr+1, X)
-LDA.w AddReceivedItemExpanded_item_target_addr+1, X
+org $098624 ; 48627 - ancilla_init.asm:731 (TYA : ASL : TXA)
+JSL SetItemAddress
+NOP #13
+
 org $098635 ; 48635 - ancilla_init.asm:727 (LDA .item_values, Y)
 LDA.w AddReceivedItemExpanded_item_values, Y
 
@@ -2554,11 +2554,27 @@ CheckIfReading:
 ;--------------------------------------------------------------------------------
 ; Decomp
 ;--------------------------------------------------------------------------------
+
 org $00FDEE ; Mirror_InitHdmaSettings
     JML Mirror_InitHdmaSettingsAux
     DecompGfx:
         JSR Decomp.begin
     RTL
+
+!LoadSpriteDirect = $7EFFE0
+
+;org $00D65C ; Do3To4HighAnimated.variable
+;    PHA : LDA !LoadSpriteDirect : BNE +
+;        JSL LoadSpriteDirect
+;        RTL
+;    +
+;    JSL Do3To4HighAnimatedAux
+;    RTL
+
+
+org $00E7B2 ; Decomp.spr_variable
+    JSL DecompExtra
+    BRA Decomp.begin
 
 org $0089E2 ; Bank00.asm:1344 - LDA.b #$80 : STA $2115
     JSL ExtraMenuNMIUpdate
@@ -2592,16 +2608,14 @@ RTL
 ;--------------------------------------------------------------------------------
 ; Rupee Charm
 ;--------------------------------------------------------------------------------
-org $06D1D2 ; Rupees dropped in the world
+org $06D1D2 ; Rupees dropped in the world (ADC $7EF360)
 JSL AddCollectedRupees
 
 org $09ADA0 ; Rupees from chests
 JSL AddChestRupees
 NOP #3
 
-
-;org $06D1D2 ; Rupees from arrow game
+;org $?????? ; Rupees from arrow game (sprite_archery_game_guy.asm:424 : ADC $7EF360)
 ;JSL AddCollectedRupees
-
 
 ;================================================================================

@@ -67,6 +67,40 @@
 ;+
 ;JML GetAnimatedSpriteGfxFile_return
 ;--------------------------------------------------------------------------------
+SetItemAddress:
+    REP #$30
+    TYA
+    ASL
+    TAX
+
+    LDA AddReceivedItemExpanded_item_target_addr+0, X : STA $00
+    LDA AddReceivedItemExpanded_item_target_addr+1, X : STA $01
+    LDA.w $0000
+    CMP.w #$F000 : BCS .bank1
+        SEP #$30
+        LDA.b #$7F : STA $02
+        RTL
+    .bank1:
+        SEP #$30
+        LDA.b #$7E : STA $02
+RTL
+
+DecompExtra:
+    CPY.b #$6C : !BLT +
+        PHB
+        LDA #$C0 : PHA : PLB
+        TYA : SBC #$6C : TAY
+        LDA $8000, Y : STA $0000CA
+        LDA $8040, Y : STA $0000C9
+        LDA $8080, Y : STA $0000C8
+        PLB
+        RTL
+    +
+    LDA $D033, Y : STA $CA
+    LDA $D112, Y : STA $C9
+    LDA $D1F1, Y : STA $C8
+RTL
+
 GetAnimatedSpriteGfxFile:
     CMP.b #$0C : BNE +
 		LDY.b #$5C : JML GetAnimatedSpriteGfxFile_return
@@ -87,7 +121,10 @@ GetAnimatedSpriteGfxFile:
     CMP.b #$39 : !BGE +
 		LDY.b #$5D : JML GetAnimatedSpriteGfxFile_return
 	+
-		LDY.b #$32
+    CMP.b #$4B : !BGE +
+		LDY.b #$32 : JML GetAnimatedSpriteGfxFile_return
+	+
+		LDY.b #$6C
 JML GetAnimatedSpriteGfxFile_return
 ;--------------------------------------------------------------------------------
 GetAnimatedSpriteBufferPointer_table:
@@ -116,6 +153,7 @@ dw $09F0 ; Null-Item
 dw $09C0 ; Clock
 dw $0A20 ; Triforce
 dw $0A50 ; Power Star
+dw $0600 ; Rupee Ring
 
 GetAnimatedSpriteBufferPointer:
 	;PHB : PHK : PLB
@@ -394,7 +432,14 @@ AddReceivedItemExpandedGetItem:
 				LDA $7EF36F : INC : STA $7EF36F
 			++
 			BRL .done
-	+
+	+ CMP.b #$B0 : BNE + ; Rupee Ring
+      ;Double Rupee Amount
+      REP #$20
+      LDA.l $07EF360
+      ASL
+      STA.l $07EF360
+      SEP #$20
+  +
 	.done
 	PLX
 	LDA $02E9 : CMP.b #$01 ; thing we wrote over
@@ -649,7 +694,7 @@ AddReceivedItemExpanded:
 	;db $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49 ; *EVENT*
 	;db $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49 ; *EVENT*
 
-	db $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49 ; Unused
+	db $4B, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49 ; Unused
 	db $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49 ; Unused
 	db $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49 ; Unused
 	db $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49 ; Unused
@@ -770,7 +815,13 @@ AddReceivedItemExpanded:
 	dw $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A ; Free Compass
 	dw $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A ; Free Big Key
 	dw $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A ; Free Small Key
-	dw $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A ; Unused
+	dw $6600 ; Rupee Ring
+  dw $6601 ; Gravity Ring
+  dw $6602, $6602 ; Fire/Flame Ring
+  dw $6603 ; Light Ring
+  dw $6604, $6604 ; Power/Sword Ring
+  dw $6605, $6605 ; Guard/Diamong Ring
+  dw $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A ; Unused
 	dw $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A ; Unused
 	dw $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A ; Unused
 	dw $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A ; Unused
@@ -813,7 +864,7 @@ AddReceivedItemExpanded:
 	db $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF ; Free Compass
 	db $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF ; Free Big Key
 	db $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF ; Free Small Key
-	db $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF ; Unused
+	db $01, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF ; Unused
 	db $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF ; Unused
 	db $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF ; Unused
 	db $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF ; Unused

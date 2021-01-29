@@ -33,9 +33,11 @@ Mirror_InitHdmaSettingsAux:
     LDA.b #$C0 : STA $9B
 RTL
 
-!UpdateRingGraphics = $7fffff
-!RButtonHeld = $7ffffe
-!WhichMenu = $7ffffd
+!UpdateRingGraphics = $7FFFFF
+!RButtonHeld = $7FFFFE
+!WhichMenu = $7FFFFd
+!UpdateMenuRingGraphics = $7FFFFc
+!RupeeCharmFlag = $7F6600
 
 ExtraMenuNMIUpdate:
     SEP #$20
@@ -43,13 +45,14 @@ ExtraMenuNMIUpdate:
     LDA $4218 : AND #$10 : STA !RButtonHeld
 
     LDA.b #$80 : STA $2115
-    LDA.l !UpdateRingGraphics : BEQ +
+
+    LDA.l !UpdateMenuRingGraphics : BEQ +
         JSR LoadExtraMenuGfx
-        LDA #$00 : STA.l !UpdateRingGraphics
+        LDA #$00 : STA.l !UpdateMenuRingGraphics
     +
+
     REP #$10
 RTL
-
 
 DecompExtraMenuGfx:
     STZ $00
@@ -61,37 +64,33 @@ DecompExtraMenuGfx:
     JSL DecompGfx
 
     SEP #$20
-    LDA.b #$01 : STA.l !UpdateRingGraphics
-    ;LDA.b #$80 : STA $2100
+    LDA.b #$01 : STA.l !UpdateMenuRingGraphics
 RTS
 
-LoadExtraMenuGfx:
-    !ExtraMenuGfxSize = #$400
+macro GfxTransfer(sourcemath, source, sourcebank, size, target)
     REP #$20
     ; Setup DMA Transfer
-    LDA.w #$4000 : STA $4302
-    LDA.w #$0400 : STA $4305
-    LDA.w #$FC00 : STA $2116
+    if <sourcemath> == 0
+       LDA #(<source>) : STA $4302
+    else
+        <source> : STA $4302
+    endif
+    LDA.w #(<size>) : STA $4305
+    LDA.w #(<target>) : STA $2116
 
     SEP #$20
-    LDA.b #$7F : STA $4304
+    LDA.b #(<sourcebank>) : STA $4304
     LDA.b #$80 : STA $2115
     LDA.b #$01 : STA $4300
     LDA.b #$18 : STA $4301
 
     ; Start
     LDA.b #$01 : STA $420b
+endmacro
 
-    ;LDA.w #$FC00 : STA $2116
-    ;LDX.w #$0000
-    ;.loop
-    ;LDA.l $7F4000,X : STA $2118
-    ;INX : INX
-    ;CPX.w !ExtraMenuGfxSize : BCC .loop
+LoadExtraMenuGfx:
+    %GfxTransfer(0, $4000, $7F, $0400, $F800/2)
 RTS
-
-
-!RupeeCharmFlag = $7EF34A ; currently just the lamp flag
 
 RingsEnabled:
     db 01 ; 00 - Rings disabled, 01 - Rings Enabled
@@ -225,28 +224,28 @@ DrawRingBox:
 
         DEY : BPL .drawHorizontalEdges
 
-        ; Remove 'A' button icon
-        LDA.w #$24F5 : STA $1584
-        LDA.w #$24F5 : STA $15C4
+    ; Remove 'A' button icon
+    LDA.w #$24F5 : STA $1584
+    LDA.w #$24F5 : STA $15C4
 
-        ; Remove ring switch text
-        LDA.w #$24F5 : STA $16D8
-        LDA.w #$24F5 : STA $16DA
-        LDA.w #$24F5 : STA $16DC
-        LDA.w #$24F5 : STA $16DE
-        LDA.w #$24F5 : STA $16E0
-        LDA.w #$24F5 : STA $16E2
-        LDA.w #$24F5 : STA $16E4
+    ; Remove ring switch text
+    LDA.w #$24F5 : STA $16D8
+    LDA.w #$24F5 : STA $16DA
+    LDA.w #$24F5 : STA $16DC
+    LDA.w #$24F5 : STA $16DE
+    LDA.w #$24F5 : STA $16E0
+    LDA.w #$24F5 : STA $16E2
+    LDA.w #$24F5 : STA $16E4
 
-        LDA.w #$24F5 : STA $1718
-        LDA.w #$24F5 : STA $171A
-        LDA.w #$24F5 : STA $171C
-        LDA.w #$24F5 : STA $171E
-        LDA.w #$24F5 : STA $1720
-        LDA.w #$24F5 : STA $1722
-        LDA.w #$24F5 : STA $1724
+    LDA.w #$24F5 : STA $1718
+    LDA.w #$24F5 : STA $171A
+    LDA.w #$24F5 : STA $171C
+    LDA.w #$24F5 : STA $171E
+    LDA.w #$24F5 : STA $1720
+    LDA.w #$24F5 : STA $1722
+    LDA.w #$24F5 : STA $1724
 
-        SEP #$30
+    SEP #$30
 RTS
 
 DrawRingIcons:
@@ -285,15 +284,12 @@ HandleRingMenuToggle:
             JSR DrawRingIcons
             LDA.b #$01 : STA $17
             LDA.b #$22 : STA $0116
-            ;JSL HUD_RebuildLong
             BRA .afterRingMenu
     .RNotHeld
         LDA !WhichMenu : CMP #02 : BNE .afterRingMenu
             JSR DrawAbilitiesBox
             LDA.b #$01 : STA $17
             LDA.b #$22 : STA $0116
-            ;JSL HUD_RebuildLong
-            ;JSR DrawAbilitiesIcons
     .afterRingMenu
 RTS
 
