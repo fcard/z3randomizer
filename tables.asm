@@ -382,7 +382,7 @@ db $00 ; #$00 = Off (default) - #$01 = On
 ;--------------------------------------------------------------------------------
 ; 0x18008D - 0x18008F (unused)
 ;--------------------------------------------------------------------------------
-org $308090 ; PC 0x180090 - 0x180097
+org $308090 ; PC 0x180090 - 0x18009D
 ProgressiveSwordLimit:
 db #$04 ; #$04 - 4 Swords (default)
 ProgressiveSwordReplacement:
@@ -403,8 +403,20 @@ ProgressiveBowLimit:
 db #$02 ; #$02 - 2 Bows (default)
 ProgressiveBowReplacement:
 db #$47 ; #$47 - 20 Rupees (default)
+ProgressiveFireRingLimit:
+db #$02 ; #$02 - 2 Rings (default)
+ProgressiveFireRingReplacement:
+db #$47 ; #$47 - 20 Rupees (default)
+ProgressivePowerRingLimit:
+db #$02 ; #$02 - 2 Rings (default)
+ProgressivePowerRingReplacement:
+db #$47 ; #$47 - 20 Rupees (default)
+ProgressiveGuardRingLimit:
+db #$02 ; #$02 - 2 Rings (default)
+ProgressiveGuardRingReplacement:
+db #$47 ; #$47 - 20 Rupees (default)
 ;--------------------------------------------------------------------------------
-; 0x18009A - 0x18009F (unused)
+; 0x18009D - 0x18009F (unused)
 ;--------------------------------------------------------------------------------
 org $3080A0 ; PC 0x1800A0 - 0x1800A4
 Bugfix_MirrorlessSQToLW:
@@ -1575,6 +1587,11 @@ dw $0000, $0000, $0000, $0000, $0000, $0000, $1818, $FF00
 dw $0000, $0000, $0000, $0000, $F800, $0000, $0000, $0000
 dw $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000
 dw $0000, $0000
+
+org $30B100 ; PC 0x183100 - 0x183120
+StartingEquipmentExtra:
+dw $0000, $0000, $0000, $0000, $0000
+dw $0000, $0000, $0000, $0000, $0000
 ;--------------------------------------------------------------------------------
 ; 0x182355 - 183FFF (unused)
 ;================================================================================

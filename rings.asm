@@ -1,3 +1,23 @@
+; Data
+RingsEnabled:
+    db 01 ; 00 - Rings disabled, 01 - Rings Enabled
+
+; Helper Variables
+!UpdateRingGraphics = $7FFFFF
+!RButtonHeld = $7FFFFE
+!WhichMenu = $7FFFFD
+!UpdateMenuRingGraphics = $7FFFFC
+
+; Ring Flags
+!RupeeRingFlag = $7F6600
+!GravityRingFlag = $7F6601
+!FireRingFlag = $7F6602
+!LightRingFlag = $7F6603
+!PowerRingFlag = $7F6604
+!GuardRingFlag = $7F6605
+
+; Moved InitHdmaSettings here so we have space in Bank 00
+
 Mirror_InitHdmaSettingsAux:
     STZ $9B
     REP #$20
@@ -33,11 +53,7 @@ Mirror_InitHdmaSettingsAux:
     LDA.b #$C0 : STA $9B
 RTL
 
-!UpdateRingGraphics = $7FFFFF
-!RButtonHeld = $7FFFFE
-!WhichMenu = $7FFFFd
-!UpdateMenuRingGraphics = $7FFFFc
-!RupeeCharmFlag = $7F6600
+; Hook into the NMI function to move Ring sprites to VRAM
 
 ExtraMenuNMIUpdate:
     SEP #$20
@@ -53,6 +69,8 @@ ExtraMenuNMIUpdate:
 
     REP #$10
 RTL
+
+; Decompression and Transfer to VRAM
 
 DecompExtraMenuGfx:
     STZ $00
@@ -92,8 +110,50 @@ LoadExtraMenuGfx:
     %GfxTransfer(0, $4000, $7F, $0400, $F800/2)
 RTS
 
-RingsEnabled:
-    db 01 ; 00 - Rings disabled, 01 - Rings Enabled
+; Ring Drawing Macros
+
+function ring_sprx(id) = $02*(id%4)
+function ring_spry(id) = $20*(id/4)
+function ring_locx(lc) = ($08*(lc%4))+($08*(lc/4))
+function ring_locy(lc) = $C0*(lc/4)
+
+macro _DrawRing(lc,id,palette)
+    REP #$20
+    !RingSprite   = $0088+ring_sprx(<id>)+ring_spry(<id>)
+    !RingPalette  = $2100+(<palette>*$0400)
+    !RingLocation = $15C8+ring_locx(<lc>)+ring_locy(<lc>)
+    LDA #(!RingPalette+!RingSprite+0)   : STA !RingLocation
+    LDA #(!RingPalette+!RingSprite+1)   : STA !RingLocation+2
+    LDA #(!RingPalette+!RingSprite+$10) : STA !RingLocation+$40
+    LDA #(!RingPalette+!RingSprite+$11) : STA !RingLocation+$42
+    SEP #$20
+endmacro
+
+macro DrawRing(flag,lc,id,palette)
+    if <flag> == !FireRingFlag || <flag> == !PowerRingFlag || <flag> == !GuardRingFlag
+    ; Progressive Ring
+        LDA.l <flag> : CMP.b #$01 : BNE +
+            %_DrawRing(<lc>, 2, <palette>)
+        + LDA.l <flag> : CMP.b #$02 : BNE +
+            %_DrawRing(<lc>, <id>, <palette>)
+        +
+    else
+    ; Non-Progressive Ring
+        LDA.l <flag> : BEQ +
+            %_DrawRing(<lc>, <id>, <palette>)
+        +
+    endif
+endmacro
+
+macro RemoveRing(lc)
+    !RingLocation = $15C8+ring_locx(<lc>)+ring_locy(<lc>)
+    LDA #$24F5 : STA !RingLocation
+    LDA #$24F5 : STA !RingLocation+2
+    LDA #$24F5 : STA !RingLocation+$40
+    LDA #$24F5 : STA !RingLocation+$42
+endmacro
+
+; Menu Drawing
 
 DrawLowerItemBox:
     JSL DrawAbilityText
@@ -113,24 +173,25 @@ RTL
 
 DrawRingSwitchText:
     !RingSwitchText = $2580
+    !RingSwitchTextLoc = $0016D8
 
     REP #$20
 
-    LDA.w #(!RingSwitchText+0) : STA $0016D8
-    LDA.w #(!RingSwitchText+1) : STA $0016DA
-    LDA.w #(!RingSwitchText+2) : STA $0016DC
-    LDA.w #(!RingSwitchText+3) : STA $0016DE
-    LDA.w #(!RingSwitchText+4) : STA $0016E0
-    LDA.w #(!RingSwitchText+5) : STA $0016E2
-    LDA.w #(!RingSwitchText+6) : STA $0016E4
+    LDA.w #(!RingSwitchText+0) : STA.l !RingSwitchTextLoc+$0
+    LDA.w #(!RingSwitchText+1) : STA.l !RingSwitchTextLoc+$2
+    LDA.w #(!RingSwitchText+2) : STA.l !RingSwitchTextLoc+$4
+    LDA.w #(!RingSwitchText+3) : STA.l !RingSwitchTextLoc+$6
+    LDA.w #(!RingSwitchText+4) : STA.l !RingSwitchTextLoc+$8
+    LDA.w #(!RingSwitchText+5) : STA.l !RingSwitchTextLoc+$A
+    LDA.w #(!RingSwitchText+6) : STA.l !RingSwitchTextLoc+$C
 
-    LDA.w #(!RingSwitchText+0+$10) : STA $001718
-    LDA.w #(!RingSwitchText+1+$10) : STA $00171A
-    LDA.w #(!RingSwitchText+2+$10) : STA $00171C
-    LDA.w #(!RingSwitchText+3+$10) : STA $00171E
-    LDA.w #(!RingSwitchText+4+$10) : STA $001720
-    LDA.w #(!RingSwitchText+5+$10) : STA $001722
-    LDA.w #(!RingSwitchText+6+$10) : STA $001724
+    LDA.w #(!RingSwitchText+$10) : STA.l !RingSwitchTextLoc+$40
+    LDA.w #(!RingSwitchText+$11) : STA.l !RingSwitchTextLoc+$42
+    LDA.w #(!RingSwitchText+$12) : STA.l !RingSwitchTextLoc+$44
+    LDA.w #(!RingSwitchText+$13) : STA.l !RingSwitchTextLoc+$46
+    LDA.w #(!RingSwitchText+$14) : STA.l !RingSwitchTextLoc+$48
+    LDA.w #(!RingSwitchText+$15) : STA.l !RingSwitchTextLoc+$4A
+    LDA.w #(!RingSwitchText+$16) : STA.l !RingSwitchTextLoc+$4C
 
     SEP #$20
 RTS
@@ -176,15 +237,14 @@ DrawAbilitiesBox:
 
 
     LDX #$0000
-    .removeRings
-        !RingSpriteLocation = $15C8
-        !RingSpriteDistance = $4
-        LDA.w #$24F5 : STA !RingSpriteLocation, X
-        LDA.w #$24F5 : STA !RingSpriteLocation+2, X
-        LDA.w #$24F5 : STA !RingSpriteLocation+$40, X
-        LDA.w #$24F5 : STA !RingSpriteLocation+$42, X
-        INX #!RingSpriteDistance
-        CPX #(!RingSpriteDistance*$4) : BCC .removeRings
+    ;.removeRings
+        %RemoveRing(0)
+        %RemoveRing(1)
+        %RemoveRing(2)
+        %RemoveRing(3)
+        %RemoveRing(4)
+        %RemoveRing(5)
+        %RemoveRing(6)
 
     SEP #$30
     LDA.l RingsEnabled : BEQ .end
@@ -249,33 +309,15 @@ DrawRingBox:
 RTS
 
 DrawRingIcons:
-    REP #$30
-
-    !RingSpriteLocation = $15C8
-    !RingSprite = $2Da0
-    LDA !RupeeCharmFlag : BEQ +
-        LDA #(!RingSprite+0)   : STA !RingSpriteLocation
-        LDA #(!RingSprite+1)   : STA !RingSpriteLocation+2
-        LDA #(!RingSprite+$10+0) : STA !RingSpriteLocation+$40
-        LDA #(!RingSprite+$10+1) : STA !RingSpriteLocation+$42
-    +
-
-    ;JSR DrawRing
-
-    ;LDA.w #$16C8 : STA $00
-    ;LDA $7EF355 : AND.w #$00FF : STA $02
-    ;LDA.w #$F801 : STA $04
-
-    ;JSR DrawRing
-
-    ;LDA.w #$16D8 : STA $00
-    ;LDA $7EF356 : AND.w #$00FF : STA $02
-    ;LDA.w #$F811 : STA $04
-
-    ;JSR DrawRing
-
-    SEP #$30
+    %DrawRing(!RupeeRingFlag,   0, 0, 3)
+    %DrawRing(!GravityRingFlag, 1, 1, 3)
+    %DrawRing(!FireRingFlag,    2, 3, 1)
+    %DrawRing(!LightRingFlag,   3, 4, 2)
+    %DrawRing(!PowerRingFlag,   4, 5, 7)
+    %DrawRing(!GuardRingFlag,   5, 6, 3)
 RTS
+
+; Handling Menu Input
 
 HandleRingMenuToggle:
     LDA !RButtonHeld : BEQ .RNotHeld
@@ -293,6 +335,7 @@ HandleRingMenuToggle:
     .afterRingMenu
 RTS
 
+; No Items
 NoEquip:
     JSR HandleRingMenuToggle
 
@@ -304,7 +347,7 @@ NoEquip:
     .noButtonPress
 RTL
 
-
+; Has Items
 MenuLoop:
     JSR HandleRingMenuToggle
     INC $0207
@@ -316,12 +359,14 @@ MenuLoop:
     ++
 RTL
 
+; Ring Functionality
+
 ; Add collected rupees to the total amount, handle Rupee Charm
 AddCollectedRupees:
    ; Input:  A register = amount to add
    ; Output: A register = total rupees
    PHA
-   LDA !RupeeCharmFlag : BEQ + ; check if we have the rupee ring
+   LDA !RupeeRingFlag : BEQ + ; check if we have the rupee ring
        PLA : ASL ; if we have it, double rupee amount
        ADC $7EF360 ; Add amount to current rupee count
        RTL
@@ -334,7 +379,7 @@ RTL ; following code will sta $7EF360
 AddChestRupees:
     ; Input: $00 = amount to add
     ; Output: A register = total rupees
-    LDA !RupeeCharmFlag : BEQ + ; check if we have the rupee charm
+    LDA !RupeeRingFlag : BEQ + ; check if we have the rupee charm
         LDA $07EF360
         CLC
         ADC $00

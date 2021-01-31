@@ -39,6 +39,19 @@
 ; #$80 - Compasses
 ; #$90 - Big Keys
 ; #$A0 - Small Keys
+; #$B0 - Rupee Ring
+; #$B1 - Gravity Ring
+; #$B2 - Fire Ring
+; #$B3 - Flame Ring
+; #$B4 - Light Ring
+; #$B5 - Power Ring
+; #$B6 - Sword Ring
+; #$B7 - Guard Ring
+; #$B8 - Diamond Ring
+; #$B9 - Progressive Fire Ring
+; #$BA - Progressive Power Ring
+; #$BB - Progressive Guard Ring
+; #$FE - Server Request (Asychronous Chest)
 ; #$FE - Server Request (Asychronous Chest)
 ; #$FF - Null Chest
 ;--------------------------------------------------------------------------------
@@ -154,6 +167,14 @@ dw $09C0 ; Clock
 dw $0A20 ; Triforce
 dw $0A50 ; Power Star
 dw $0600 ; Rupee Ring
+dw $0618 ; Gravity Ring
+dw $0630 ; Fire Ring
+dw $0648 ; Flame Ring
+dw $0660 ; Light Ring
+dw $0678 ; Power Ring
+dw $0690 ; Sword Ring
+dw $06A8 ; Guard Ring
+dw $06C0 ; Diamond Ring
 
 GetAnimatedSpriteBufferPointer:
 	;PHB : PHK : PLB
@@ -463,6 +484,19 @@ RTL
 ;3C:Bottle Already Filled w/ Bee
 ;3D:Bottle Already Filled w/ Fairy
 ;48:Bottle Already Filled w/ Gold Bee
+macro ProgressiveRingReplace(location, ring1, ring2)
+    LDA.l <location> : %RingLimit(<location>) : BCC +
+        %RingReplacement(<location>) : STA $02D8
+        BRL .done
+    +
+        CMP #$00 : BNE ?second_item
+            LDA <ring1> : STA $02D8
+            BRL .done
+        ?second_item:
+            LDA <ring2> : STA $02D8
+            BRL .done
+endmacro
+
 AddReceivedItemExpanded:
 {
 	PHA : PHX
@@ -539,19 +573,25 @@ AddReceivedItemExpanded:
 				LDA.b #$23 : STA $02D8 : BRL .done
 		++ : CMP.b #$61 : BNE ++ ; Progressive Lifting Glove
 			LDA $7EF354 : BNE + ; No Lift
-				LDA.b #$1B : STA $02D8 : BRA .done
+				LDA.b #$1B : STA $02D8 : BRL .done
 			+ ; Everything Else
-				LDA.b #$1C : STA $02D8 : BRA .done
+				LDA.b #$1C : STA $02D8 : BRL .done
 		++ : CMP.b #$64 : BNE ++ : -- ; Progressive Bow
 			LDA $7EF340 : INC : LSR : CMP.l ProgressiveBowLimit : !BLT +
 				LDA.l ProgressiveBowReplacement : STA $02D8 : BRL .done
 			+ : CMP.b #$00 : BNE + ; No Bow
-				LDA.b #$3A : STA $02D8 : BRA .done
+				LDA.b #$3A : STA $02D8 : BRL .done
 			+ ; Any Bow
-				LDA.b #$3B : STA $02D8 : BRA .done
+				LDA.b #$3B : STA $02D8 : BRL .done
 		++ : CMP.b #$65 : BNE ++ ; Progressive Bow 2
 			LDA.l !INVENTORY_SWAP_2 : ORA #$20 : STA.l !INVENTORY_SWAP_2
 			BRA --
+		++ : CMP.b #$B9 : BNE ++ ; Progressive Fire Ring
+      %ProgressiveRingReplace($7F6602, #$B2, #$B3)
+		++ : CMP.b #$BA : BNE ++ ; Progressive Power Ring
+      %ProgressiveRingReplace($7F6604, #$B5, #$B6)
+		++ : CMP.b #$BB : BNE ++ ; Progressive Guard Ring
+      %ProgressiveRingReplace($7F6605, #$B7, #$B8)
 		; ++ : CMP.b #$FE : BNE ++ ; Server Request (Null Chest)
 		;	JSL ChestItemServiceRequest
 		;	BRA .done
@@ -694,7 +734,16 @@ AddReceivedItemExpanded:
 	;db $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49 ; *EVENT*
 	;db $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49 ; *EVENT*
 
-	db $4B, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49 ; Unused
+	db $4B ; Rupee Ring
+  db $4C ; Gravity Ring
+  db $4D, $4E ; Fire/Flame Ring
+  db $4F ; Light Ring
+  db $50, $51 ; Power/Sword Ring
+  db $52, $53 ; Guard/Diamond Ring
+  db $FF ; Progressive Fire Ring
+  db $FF ; Progressive Power Ring
+  db $FF ; Progressive Guard Ring
+  db $49, $49, $49, $49 ; Unused
 	db $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49 ; Unused
 	db $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49 ; Unused
 	db $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49 ; Unused
@@ -734,7 +783,16 @@ AddReceivedItemExpanded:
 	db $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02 ; Free Big Key
 	db $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00 ; Free Small Key
 
-	db $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02 ; Unused
+	db $02 ; Rupee Ring
+  db $02 ; Gravity Ring
+  db $02, $02 ; Fire/Flame Ring
+  db $02 ; Light Ring
+  db $02, $02 ; Power/Sword Ring
+  db $02, $02 ; Guard/Diamond Ring
+  db $02 ; Progressive Fire Ring
+  db $02 ; Progressive Power Ring
+  db $02 ; Progressive Guard Ring
+	db $02, $02, $02, $02 ; Unused
 	db $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02 ; Unused
 	db $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02 ; Unused
 	db $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02, $02 ; Unused
@@ -774,7 +832,16 @@ AddReceivedItemExpanded:
 	db  2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 ; Free Compass
 	db  4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4 ; Free Big Key
 	db  4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4 ; Free Small Key
-	db  4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4 ; Unused
+	db  4 ; Rupee Ring
+  db  4 ; Gravity Ring
+  db  4, 4 ; Fire/Flame Ring
+  db  4 ; Light Ring
+  db  4,  4 ; Power/Sword Ring
+  db  4,  4 ; Guard/Diamond Ring
+  db  4 ; Progressive Fire Ring
+  db  4 ; Progressive Power Ring
+  db  4 ; Progressive Guard Ring
+	db  4, 4, 4, 4 ; Unused
 	db  4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4 ; Unused
 	db  4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4 ; Unused
 	db  4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4 ; Unused
@@ -821,7 +888,10 @@ AddReceivedItemExpanded:
   dw $6603 ; Light Ring
   dw $6604, $6604 ; Power/Sword Ring
   dw $6605, $6605 ; Guard/Diamong Ring
-  dw $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A ; Unused
+  dw $6602 ; Progressive Fire Ring
+  dw $6604 ; Progressive Power Ring
+  dw $6605 ; Progressive Guard Ring
+  dw $F36A, $F36A, $F36A, $F36A ; Unused
 	dw $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A ; Unused
 	dw $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A ; Unused
 	dw $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A, $F36A ; Unused
@@ -864,7 +934,16 @@ AddReceivedItemExpanded:
 	db $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF ; Free Compass
 	db $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF ; Free Big Key
 	db $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF ; Free Small Key
-	db $01, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF ; Unused
+	db $01 ; Rupee Ring
+  db $01 ; Gravity Ring
+  db $01, $02 ; Fire/Flame Ring
+  db $01 ; Light Ring
+  db $01, $02 ; Power/Sword Ring
+  db $01, $02 ; Guard/Diamond Ring
+  db $FF ; Progressive Fire Ring
+  db $FF ; Progressive Power Ring
+  db $FF ; Progressive Guard Ring
+	db $FF, $FF, $FF, $FF ; Unused
 	db $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF ; Unused
 	db $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF ; Unused
 	db $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF ; Unused
@@ -949,7 +1028,8 @@ Link_ReceiveItemAlternatesExpanded:
 	db -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ; Free Compass
 	db -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ; Free Big Key
 	db -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ; Free Small Key
-	db -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ; Unused
+	db -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ; Rings
+  db -1 ; Unused
 	db -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ; Unused
 	db -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ; Unused
 	db -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ; Unused

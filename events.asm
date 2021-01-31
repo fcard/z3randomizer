@@ -132,6 +132,11 @@ OnNewFile:
 			DEX : DEX
 		BPL -
 
+		LDX.w #$0020 : - ; copy over starting equipment (extra)
+			LDA StartingEquipmentExtra, X : STA $7F6600, X
+			DEX : DEX
+    BPL -
+
 		LDX #$000E : -
         	LDA $7EF37C, X : STA $7EF4E0, X
 			DEX : DEX
