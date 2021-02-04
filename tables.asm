@@ -4,7 +4,7 @@
 org $308000 ; bank #$30 ; PC 0x180000 - 0x180006 [encrypted]
 HeartPieceIndoorValues:
 HeartPiece_Forest_Thieves:
-	db #$B0 ; #$17 = Heart Piece
+	db #$17 ; #$17 = Heart Piece
 HeartPiece_Lumberjack_Tree:
 	db #$17
 HeartPiece_Spectacle_Cave:

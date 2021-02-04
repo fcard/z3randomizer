@@ -7,6 +7,9 @@ RingsEnabled:
 !RButtonHeld = $7FFFFE
 !WhichMenu = $7FFFFD
 !UpdateMenuRingGraphics = $7FFFFC
+!BombDamage = $7FFFFB
+!FireDamage = $7FFFFA
+!SpikeDamage = $7FFFF9
 
 ; Ring Flags
 !RupeeRingFlag = $7F6600
@@ -117,6 +120,7 @@ function ring_spry(id) = $20*(id/4)
 function ring_locx(lc) = ($08*(lc%4))+($08*(lc/4))
 function ring_locy(lc) = $C0*(lc/4)
 
+
 macro _DrawRing(lc,id,palette)
     REP #$20
     !RingSprite   = $0088+ring_sprx(<id>)+ring_spry(<id>)
@@ -155,6 +159,13 @@ endmacro
 
 ; Menu Drawing
 
+RestoreNormalMenuAux:
+    LDA !WhichMenu : CMP #02 : BEQ +
+        JSL DrawMoonPearl
+        JSL DrawProgressIcons
+    +
+RTL
+
 DrawLowerItemBox:
     JSL DrawAbilityText
     LDA.l RingsEnabled : BEQ +
@@ -166,6 +177,8 @@ DrawLowerItemBox:
     +
     LDA #$01 : STA !WhichMenu
     JSL DrawAbilityIcons
+    JSL DrawMoonPearl
+    JSL DrawProgressIcons
     LDA.l RingsEnabled : BEQ ++
        JSR DrawRingSwitchText
     ++
@@ -361,6 +374,8 @@ RTL
 
 ; Ring Functionality
 
+; Rupee Ring
+
 ; Add collected rupees to the total amount, handle Rupee Charm
 AddCollectedRupees:
    ; Input:  A register = amount to add
@@ -390,3 +405,113 @@ AddChestRupees:
     CLC
     ADC $00
 RTL
+
+; Gravity Ring
+
+DoPitDamage:
+    LDA !GravityRingFlag : BEQ + ; check if we have the gravity ring
+        RTL ; if we have it, don't do anything
+    +
+    JSL.l OHKOTimer ; otherwise, call damage routines
+    LDA $7EF36D : SBC #8 ; and reduce health by one heart (8 health)
+    ADC !GuardRingFlag   ; calculate guard ring reduction
+    ADC !GuardRingFlag   ; (it's double the current ring)
+    STA $7EF36D
+
+    CMP.b #$A8 : BCC .notDead ; for overflowed numbers, set health to 0
+        LDA.b #$00 : STA $7EF36D
+    .notDead
+RTL
+
+!DiminishingEffect = 0 ; Guard Ring effect goes down with armor upgrades (0:no, 1:yes)
+!MinimumDamage = 01 ; Minimum damage after ring damage reduction
+
+macro BranchIfLessThanMinimum(minimum, address)
+    if <minimum> <= 1
+        BPL <address>
+    else
+        CMP <minimum> : BCC <address>
+    endif
+endmacro
+
+macro DamageReduction(address, value, endpoint)
+    if !DiminishingEffect != 0
+        LDA $7EF35B : BEQ ?greenMail ; Check current mail
+            CMP #$01 : BNE ?redMail
+            ;?blueMail:
+                LDA <address> : SEC : SBC #(<value>-1)
+                %BranchIfLessThanMinimum(!MinimumDamage, <endpoint>)
+                LDA #!MinimumDamage
+                BRA <endpoint>
+            ?redMail:
+                LDA <address> : SEC : SBC #(<value>-2)
+                %BranchIfLessThanMinimum(!MinimumDamage, <endpoint>)
+                LDA #!MinimumDamage
+                BRA <endpoint>
+            ?greenMail:
+                LDA <address> : SEC : SBC #<value>
+                %BranchIfLessThanMinimum(!MinimumDamage, <endpoint>)
+                LDA #!MinimumDamage
+    else
+        LDA <address> : SEC : SBC #<value>
+            %BranchIfLessThanMinimum(!MinimumDamage, <endpoint>)
+            LDA #!MinimumDamage
+    endif
+endmacro
+
+RingDamageReduction:
+    ; Bomb Damage / Fire Ring
+    LDA !BombDamage : BEQ +
+        LDA #0 : STA !BombDamage
+        LDA !FireRingFlag : BEQ .damageTypesHandled
+            LDA #0 : STA $00
+            BRA .done
+
+    ; Fire Damage / Fire/Flame Ring
+    + LDA !FireDamage : BEQ +
+        LDA #0 : STA !FireDamage
+        LDA !FireRingFlag : BEQ .damageTypesHandled
+        CMP #1 : BNE .flameRing
+        ;.fireRing
+            LDA $00 : LSR : STA $00
+            BRA .damageTypesHandled
+        .flameRing
+            STZ $00
+            BRA .done
+
+    ; Spike Floor Damage / Iron Boots
+    + LDA !SpikeDamage : BEQ .damageTypesHandled
+      LDA #0 : STA !SpikeDamage
+
+    .damageTypesHandled
+
+    LDA !GuardRingFlag : BEQ .done
+        CMP #$01 : BNE .diamondRing
+        ;.guardRing
+            %DamageReduction($00, 2, .setAddress)
+            BRA .setAddress
+        .diamondRing
+            %DamageReduction($00, 4, .setAddress)
+    .setAddress
+        STA $00
+    .done
+RTL
+
+BombDamage:
+    LDA #1 : STA !BombDamage
+    LDA $7EF35B : TAY
+    LDA $980B, Y : STA $0373
+RTL
+
+FireDamage:
+    LDA #1 : STA !FireDamage
+    LDA $7EF35B : TAY
+    ;LDA $????, Y : STA $0373
+RTL
+
+SpikeDamage:
+    LDA #1 : STA !SpikeDamage
+    LDA $7EF35B : TAY
+    ;LDA $????, Y : STA $0373
+RTL
+

@@ -180,7 +180,13 @@ RTL
 ;--------------------------------------------------------------------------------
 OnLinkDamaged:
 	JSL.l FlipperKill
-	JSL.l OHKOTimer
+  JSL.l RingDamageReduction
+  LDA $00 : BEQ .noDamage
+	    JSL.l OHKOTimer
+      RTL
+
+  .noDamage
+  LDA $7EF36D
 RTL
 ;--------------------------------------------------------------------------------
 OnEnterWater:
@@ -191,12 +197,12 @@ OnEnterWater:
 RTL
 ;--------------------------------------------------------------------------------
 OnLinkDamagedFromPit:
-	JSL.l OHKOTimer
+  JSL.l DoPitDamage
 	LDA.b #$14 : STA $11 ; thing we wrote over
 RTL
 ;--------------------------------------------------------------------------------
 OnLinkDamagedFromPitOutdoors:
-	JSL.l OHKOTimer ; make sure this is last
+  JSL.l DoPitDamage
 RTL
 ;--------------------------------------------------------------------------------
 !RNG_ITEM_LOCK_IN = "$7F5090"

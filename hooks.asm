@@ -2144,9 +2144,11 @@ LinkDamaged_linkNotDamaged:
 ;--------------------------------------------------------------------------------
 org $0794FB ; <- 394FB - Bank07.asm:3336 (LDA.b #$14 : STA $11)
 JSL.l OnLinkDamagedFromPit
+RTS
 ;--------------------------------------------------------------------------------
 org $01FFE7 ; <- FFE7 - Bank01.asm:16375 (LDA $7EF36D)
 JSL.l OnLinkDamagedFromPitOutdoors
+RTL
 ;--------------------------------------------------------------------------------
 org $078F27 ; <- 38F27
 JSL.l FlipperReset
@@ -2588,6 +2590,10 @@ org $0089E2 ; Bank00.asm:1344 - LDA.b #$80 : STA $2115
 ;--------------------------------------------------------------------------------
 org $0DDDC3 ; JSR DrawAbilityText
 JSL DrawLowerItemBox
+NOP #(2+3+3)
+
+org $0DE346 ; JSL DrawMoonPearl
+JSL RestoreNormalMenuAux
 NOP #2
 
 org $0DDF15 ; equipment.asm:450 - NormalMenu: INC $207 : LDA $F0
@@ -2604,6 +2610,41 @@ RTL
 org $0DE819 ; change DrawAbilityIcons' RTS to a RTL
 RTL
 
+org $0DE9CC ; change DrawProgressIcons's RTS to a RTL
+RTL
+
+org $0DECE9
+DrawMoonPearl:
+
+org $0DED03 ; change DrawMoonPearl's RTS to a RTL
+RTL
+
+org $089900 ; ancilla_bomb:576 - Bomb_CheckSpriteAndPlayerDamage: LDA $7EF35B
+JSL BombDamage
+RTS
+
+
+!DebugRingLocations = 1 ; Rings in Kakariko Village instead of red rupees (0=No, 1=Yes)
+if !DebugRingLocations != 0
+    org $01EA91
+    db $B9
+    org $01EA94
+    db $B9
+    org $01EA97
+    db $B0
+    org $01EA9A
+    db $B1
+    org $01EB12
+    db $B4
+    org $01EB15
+    db $BA
+    org $01EB18
+    db $BA
+    org $01EB1B
+    db $BB
+    org $01EB0F
+    db $BB
+endif
 
 ;--------------------------------------------------------------------------------
 ; Rupee Charm

@@ -167,14 +167,14 @@ dw $09C0 ; Clock
 dw $0A20 ; Triforce
 dw $0A50 ; Power Star
 dw $0600 ; Rupee Ring
-dw $0618 ; Gravity Ring
-dw $0630 ; Fire Ring
-dw $0648 ; Flame Ring
-dw $0660 ; Light Ring
-dw $0678 ; Power Ring
-dw $0690 ; Sword Ring
-dw $06A8 ; Guard Ring
-dw $06C0 ; Diamond Ring
+dw $0630 ; Gravity Ring
+dw $0660 ; Fire Ring
+dw $0690 ; Flame Ring
+dw $06C0 ; Light Ring
+dw $06F0 ; Power Ring
+dw $0720 ; Sword Ring
+dw $0750 ; Guard Ring
+dw $0780 ; Diamond Ring
 
 GetAnimatedSpriteBufferPointer:
 	;PHB : PHK : PLB
@@ -460,6 +460,12 @@ AddReceivedItemExpandedGetItem:
       ASL
       STA.l $07EF360
       SEP #$20
+      BRA .done
+	+ CMP.b #$B2 : BNE + ; Fire Ring
+		  LDA #$10 : STA $7EF375 ; Add 10 bombs
+      BRA .done
+	+ CMP.b #$B3 : BNE + ; Flame Ring
+		  LDA #$50 : STA $7EF375 ; Add 50 bombs
   +
 	.done
 	PLX
@@ -490,10 +496,10 @@ macro ProgressiveRingReplace(location, ring1, ring2)
         BRL .done
     +
         CMP #$00 : BNE ?second_item
-            LDA <ring1> : STA $02D8
+            LDA.b <ring1> : STA $02D8
             BRL .done
         ?second_item:
-            LDA <ring2> : STA $02D8
+            LDA.b <ring2> : STA $02D8
             BRL .done
 endmacro
 

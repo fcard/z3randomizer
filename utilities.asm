@@ -30,9 +30,9 @@ macro GetRingId(location, id1, id2, getid)
         RTL
     +
         CMP #$00 : BNE ?second_item
-            LDA <id1> : RTL
+            LDA.b <id1> : RTL
         ?second_item:
-            LDA <id2> : RTL
+            LDA.b <id2> : RTL
 endmacro
 
 macro GetRingSpriteID(location, id1, id2)
