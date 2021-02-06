@@ -791,9 +791,6 @@ JSL.l MSMusicReset : NOP
 ;================================================================================
 ; Temporary Nerfs and Buffs
 ;--------------------------------------------------------------------------------
-org $06F400 ; <- 37F400 - Bank06.asm : 5963 (CLC : ADC $7EF35B)
-JSL.l LoadModifiedArmorLevel : NOP
-;--------------------------------------------------------------------------------
 org $07ADDB ; <- 3ADDB - Bank07.asm : 7251 (LDA $7EF37B : TAY)
 JSL.l LoadModifiedMagicLevel
 ;--------------------------------------------------------------------------------
@@ -2586,8 +2583,17 @@ org $0089E2 ; Bank00.asm:1344 - LDA.b #$80 : STA $2115
 ;  JSL InitTilesets_LoadExtraMenuGfx
 
 ;--------------------------------------------------------------------------------
+; Special Properties
+;--------------------------------------------------------------------------------
+org $0DB84D ; Set Special Sprite Properties
+JSL SetSpriteProperties : NOP
+
+;--------------------------------------------------------------------------------
 ; Rings
 ;--------------------------------------------------------------------------------
+org $06F400 ; <- 37F400 - Bank06.asm : 5963 (CLC : ADC $7EF35B)
+JSL.l GeneralDamage : NOP
+
 org $0DDDC3 ; JSR DrawAbilityText
 JSL DrawLowerItemBox
 NOP #(2+3+3)
@@ -2623,9 +2629,11 @@ org $089900 ; ancilla_bomb:576 - Bomb_CheckSpriteAndPlayerDamage: LDA $7EF35B
 JSL BombDamage
 RTS
 
+;01ec07
 
-!DebugRingLocations = 1 ; Rings in Kakariko Village instead of red rupees (0=No, 1=Yes)
+!DebugRingLocations = 1 ; Rings in Chests around the world (0=No, 1=Yes)
 if !DebugRingLocations != 0
+    ; Village Well Cave
     org $01EA91
     db $B9
     org $01EA94
@@ -2634,6 +2642,8 @@ if !DebugRingLocations != 0
     db $B0
     org $01EA9A
     db $B1
+
+    ; Village Hideout
     org $01EB12
     db $B4
     org $01EB15
@@ -2642,12 +2652,14 @@ if !DebugRingLocations != 0
     db $BA
     org $01EB1B
     db $BB
-    org $01EB0F
+
+    ; Castle
+    org $01E971 ; Lamp Chest in castle basement
     db $BB
 endif
 
 ;--------------------------------------------------------------------------------
-; Rupee Charm
+; Rupee Ring
 ;--------------------------------------------------------------------------------
 org $06D1D2 ; Rupees dropped in the world (ADC $7EF360)
 JSL AddCollectedRupees
@@ -2658,5 +2670,14 @@ NOP #3
 
 ;org $?????? ; Rupees from arrow game (sprite_archery_game_guy.asm:424 : ADC $7EF360)
 ;JSL AddCollectedRupees
+
+;================================================================================
+
+;================================================================================
+;--------------------------------------------------------------------------------
+; Power Ring
+;--------------------------------------------------------------------------------
+org $06EF67 ; Damage to Sprites
+JSL DamageSprite : NOP
 
 ;================================================================================

@@ -2,6 +2,120 @@
 RingsEnabled:
     db 01 ; 00 - Rings disabled, 01 - Rings Enabled
 
+; Properties for sprites for new items:
+; 0000000F
+; |||||||'--1 = Is Fire / 0 = Isn't Fire
+; ||||||'---Unused
+; |||||'---Unused
+; ||||'---Unused
+; |||'---Unused
+; ||'---Unused
+; |'---Unused
+; '---Unused
+SpecialSpriteProperties:
+    ; 0x00-0x0F
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+
+    ; 0x10-0x1F
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+
+    ; 0x20-0x2F
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+
+    ; 0x30-0x3F
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+
+    ; 0x40-0x4F
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+
+    ; 0x50-0x5F
+    db $00, $00, $00, $00
+    db $00, $01, $00, $00 ; ??, Fireball
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+
+    ; 0x60-0x6F
+    db $00, $01, $00, $00 ; ??, Beamos Laser
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+
+    ; 0x70-0x7F
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+
+    ; 0x80-0x8F
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+
+    ; 0x90-0x9F
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+
+    ; 0xA0-0xAF
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+
+    ; 0xB0-0xBF
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+
+    ; 0xC0-0xCF
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+
+    ; 0xD0-0xDF
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+
+    ; 0xE0-0xEF
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+    db $00, $00, $00, $00
+
+    ; 0xF0-0xF5
+    db $00, $00, $00, $00
+    db $00, $00
+
+
+!SpriteProp = $1CC0
+
+SetSpriteProperties:
+    PHK : PLB
+    LDA SpecialSpriteProperties, Y : STA.l !SpriteProp, X
+    LDA $040A : LDY $1B ; thing we wrote over
+RTL
+
 ; Helper Variables
 !UpdateRingGraphics = $7FFFFF
 !RButtonHeld = $7FFFFE
@@ -381,7 +495,7 @@ AddCollectedRupees:
    ; Input:  A register = amount to add
    ; Output: A register = total rupees
    PHA
-   LDA !RupeeRingFlag : BEQ + ; check if we have the rupee ring
+   LDA !RupeeRingFlag : AND #$00FF : BEQ + ; check if we have the rupee ring
        PLA : ASL ; if we have it, double rupee amount
        ADC $7EF360 ; Add amount to current rupee count
        RTL
@@ -394,7 +508,7 @@ RTL ; following code will sta $7EF360
 AddChestRupees:
     ; Input: $00 = amount to add
     ; Output: A register = total rupees
-    LDA !RupeeRingFlag : BEQ + ; check if we have the rupee charm
+    LDA !RupeeRingFlag : AND #$00FF : BEQ + ; check if we have the rupee charm
         LDA $07EF360
         CLC
         ADC $00
@@ -426,36 +540,36 @@ RTL
 !DiminishingEffect = 0 ; Guard Ring effect goes down with armor upgrades (0:no, 1:yes)
 !MinimumDamage = 01 ; Minimum damage after ring damage reduction
 
-macro BranchIfLessThanMinimum(minimum, address)
-    if <minimum> <= 1
-        BPL <address>
+macro BranchIfGreaterOrEqual(minimum, address)
+    if <minimum> == 0
+        BNE <address>
     else
-        CMP <minimum> : BCC <address>
+        CMP #<minimum> : BCS <address>
     endif
 endmacro
+
+macro _DamageReduction(address, value, endpoint, branchendpoint)
+    LDA <address> : SEC : SBC #<value>
+    %BranchIfGreaterOrEqual(!MinimumDamage, <endpoint>)
+    LDA #!MinimumDamage
+    if <branchendpoint> != 0
+        BRA <endpoint>
+    endif
+endmacro
+
 
 macro DamageReduction(address, value, endpoint)
     if !DiminishingEffect != 0
         LDA $7EF35B : BEQ ?greenMail ; Check current mail
             CMP #$01 : BNE ?redMail
             ;?blueMail:
-                LDA <address> : SEC : SBC #(<value>-1)
-                %BranchIfLessThanMinimum(!MinimumDamage, <endpoint>)
-                LDA #!MinimumDamage
-                BRA <endpoint>
+                %_DamageReduction(<address>, <value>-1, <endpoint>, 1)
             ?redMail:
-                LDA <address> : SEC : SBC #(<value>-2)
-                %BranchIfLessThanMinimum(!MinimumDamage, <endpoint>)
-                LDA #!MinimumDamage
-                BRA <endpoint>
+                %_DamageReduction(<address>, <value>-2, <endpoint>, 1)
             ?greenMail:
-                LDA <address> : SEC : SBC #<value>
-                %BranchIfLessThanMinimum(!MinimumDamage, <endpoint>)
-                LDA #!MinimumDamage
+                %_DamageReduction(<address>, <value>, <endpoint>, 0)
     else
-        LDA <address> : SEC : SBC #<value>
-            %BranchIfLessThanMinimum(!MinimumDamage, <endpoint>)
-            LDA #!MinimumDamage
+        %_DamageReduction(<address>, <value>, <endpoint>, 0)
     endif
 endmacro
 
@@ -503,10 +617,13 @@ BombDamage:
     LDA $980B, Y : STA $0373
 RTL
 
-FireDamage:
-    LDA #1 : STA !FireDamage
-    LDA $7EF35B : TAY
-    ;LDA $????, Y : STA $0373
+GeneralDamage:
+    PHA
+    LDA.l !SpriteProp, X : AND #$01 : BEQ .notFire
+        LDA #1 : STA !FireDamage
+    .notFire
+    PLA
+    JSL.l LoadModifiedArmorLevel
 RTL
 
 SpikeDamage:
@@ -514,4 +631,23 @@ SpikeDamage:
     LDA $7EF35B : TAY
     ;LDA $????, Y : STA $0373
 RTL
+
+macro ExtraDamage(extra)
+    LDA #<extra> : CLC : ADC $0CE2,X : BCC +
+    LDA #$FF
+    + STA $0CE2,X
+endmacro
+
+DamageSprite:
+    LDA !PowerRingFlag : BEQ .afterExtraDamage
+        CMP #01 : BNE .swordRing
+        ;.powerRing
+            %ExtraDamage(1)
+        .swordRing
+            %ExtraDamage(2)
+    .afterExtraDamage
+    LDA $0E50,X : STA $00
+RTL
+
+
 

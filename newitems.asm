@@ -174,7 +174,7 @@ dw $06C0 ; Light Ring
 dw $06F0 ; Power Ring
 dw $0720 ; Sword Ring
 dw $0750 ; Guard Ring
-dw $0780 ; Diamond Ring
+dw $0900 ; Diamond Ring
 
 GetAnimatedSpriteBufferPointer:
 	;PHB : PHK : PLB
