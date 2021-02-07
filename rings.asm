@@ -133,6 +133,18 @@ RTL
 !PowerRingFlag = $7F6604
 !GuardRingFlag = $7F6605
 
+!PaletteOrange = 0
+!PaletteRed    = 1
+!PaletteYellow = 2
+!PaletteBlue   = 3
+!PaletteGray   = 4
+!PaletteBurn   = 5
+!PaletteRB     = 6
+!PaletteGreen  = 7
+
+!ABoxWidth  = 16
+!ABoxHeight = 6
+
 ; Moved InitHdmaSettings here so we have space in Bank 00
 
 Mirror_InitHdmaSettingsAux:
@@ -227,24 +239,133 @@ LoadExtraMenuGfx:
     %GfxTransfer(0, $4000, $7F, $0400, $F800/2)
 RTS
 
+; Sprite Drawing Macros
+
+function abox_addr(x,y) = $1584+(x*2)+(y*$40)
+function menu_sprite_addr(palette,x,y) = $2000+(palette*$0400)+(x*1)+(y*$10)
+function ring_sprite_addr(palette,x,y) = $2100+(palette*$0400)+$0080+(x*1)+(y*$10)
+
+function ring_sprx(id) = 8+(2*(id%4))
+function ring_spry(id) = 2*(id/4)
+function ring_locx(lc) = 2+(4*(lc%4))+(4*(lc/4))
+function ring_locy(lc) = 2+(3*(lc/4))
+
+!RingStartLocation = $1608 ; for reference
+
+macro RepIf(flag)
+    if <flag> != 0
+        REP #$20
+    endif
+endmacro
+
+macro SepIf(flag)
+    if <flag> != 0
+        SEP #$20
+    endif
+endmacro
+
+macro DrawMenuSprite8x8(x,y,sx,sy,palette,repsep)
+    %RepIf(<repsep>)
+    LDA #(menu_sprite_addr(<palette>, <sx>, <sy>)) : STA.l abox_addr(<x>, <y>)
+    %SepIf(<repsep>)
+endmacro
+
+macro DrawMenuSpriteYFlipped8x8(x,y,sx,sy,palette,repsep)
+    %RepIf(<repsep>)
+    LDA #(menu_sprite_addr(<palette>, <sx>, <sy>)|$8000) : STA.l abox_addr(<x>, <y>)
+    %SepIf(<repsep>)
+endmacro
+
+macro DrawLastMenuSpriteYFliped8x8(x,y,repsep)
+    %RepIf(<repsep>)
+    ORA.w #$8000 : STA.l abox_addr(<x>, <y>)
+    %SepIf(<repsep>)
+endmacro
+
+macro DrawLastMenuSpriteYUnfliped8x8(x,y,repsep)
+    %RepIf(<repsep>)
+    EOR.w #$8000 : STA.l abox_addr(<x>, <y>)
+    %SepIf(<repsep>)
+endmacro
+
+macro DrawLastMenuSpriteXFliped8x8(x,y,repsep)
+    %RepIf(<repsep>)
+    ORA.w #$4000 : STA.l abox_addr(<x>, <y>)
+    %SepIf(<repsep>)
+endmacro
+
+macro DrawExtraMenuSprite8x8(x,y,sx,sy,palette,repsep)
+    %RepIf(<repsep>)
+    LDA #(ring_sprite_addr(<palette>, <sx>, <sy>)) : STA.l abox_addr(<x>, <y>)
+    %SepIf(<repsep>)
+endmacro
+
+macro DrawExtraMenuSprite16x16(x,y,sx,sy,palette,repsep)
+    %RepIf(<repsep>)
+    LDA #(ring_sprite_addr(<palette>, <sx>,   <sy>))   : STA.l abox_addr(<x>,   <y>)
+    LDA #(ring_sprite_addr(<palette>, <sx>+1, <sy>))   : STA.l abox_addr(<x>+1, <y>)
+    LDA #(ring_sprite_addr(<palette>, <sx>,   <sy>+1)) : STA.l abox_addr(<x>,   <y>+1)
+    LDA #(ring_sprite_addr(<palette>, <sx>+1, <sy>+1)) : STA.l abox_addr(<x>+1, <y>+1)
+    %SepIf(<repsep>)
+endmacro
+
+macro RemoveMenuSprite8x8(x,y,repsep)
+    %RepIf(<repsep>)
+    LDA.w #$24F5 : STA.l abox_addr(<x>, <y>)
+    %SepIf(<repsep>)
+endmacro
+
+macro RemoveMenuSprite16x16(x,y,repsep)
+    %RepIf(<repsep>)
+    LDA.w #$24F5 : STA.l abox_addr(<x>,   <y>)
+    LDA.w #$24F5 : STA.l abox_addr(<x>+1, <y>)
+    LDA.w #$24F5 : STA.l abox_addr(<x>,   <y>+1)
+    LDA.w #$24F5 : STA.l abox_addr(<x>+1, <y>+1)
+    %SepIf(<repsep>)
+endmacro
+
+macro DrawABoxCorners(palette)
+    ;?drawCorners:
+        %DrawMenuSprite8x8(-1, -1, 11, 15, <palette>, 0)
+        %DrawLastMenuSpriteYFliped8x8(-1, !ABoxHeight+1, 0)
+        %DrawLastMenuSpriteXFliped8x8(!ABoxWidth+1, !ABoxHeight+1, 0)
+        %DrawLastMenuSpriteYUnfliped8x8(!ABoxWidth+1, -1, 0)
+
+    ;?drawVerticalEdgesPrep:
+        CLC
+        LDX.w #$0000 ; starting point to draw vertical edges
+        LDY.w #$0006 ; number of pair of vertical edges to draw
+
+    ?drawVerticalEdges:
+        LDA.w #menu_sprite_addr(<palette>,12,15) : STA abox_addr(-1,0), X
+        ORA.w #$4000 : STA abox_addr(!ABoxWidth+1,0), X ; flip horizontally and draw
+
+        TXA : ADC.w #$0040 : TAX ; adding 40 to X means drawing one line lower in the menu
+
+        DEY : BPL ?drawVerticalEdges
+
+
+    ;?drawHorizontalEdgesPrep:
+        LDX.w #$0000 ; starting point to draw horizontal edges
+        LDY.w #$0010 ; number of pair of horizontal edges to draw
+
+    ?drawHorizontalEdges:
+        LDA.w #menu_sprite_addr(<palette>,9,15) : STA abox_addr(0,-1), X
+        ORA.w #$8000 : STA abox_addr(0,!ABoxHeight+1), X ; flip vertically and draw
+
+        INX #2 ; adding 2 to X means drawing one column to the right in the menu
+
+        DEY : BPL ?drawHorizontalEdges
+endmacro
+
 ; Ring Drawing Macros
 
-function ring_sprx(id) = $02*(id%4)
-function ring_spry(id) = $20*(id/4)
-function ring_locx(lc) = ($08*(lc%4))+($08*(lc/4))
-function ring_locy(lc) = $C0*(lc/4)
-
-
 macro _DrawRing(lc,id,palette)
-    REP #$20
-    !RingSprite   = $0088+ring_sprx(<id>)+ring_spry(<id>)
-    !RingPalette  = $2100+(<palette>*$0400)
-    !RingLocation = $15C8+ring_locx(<lc>)+ring_locy(<lc>)
-    LDA #(!RingPalette+!RingSprite+0)   : STA !RingLocation
-    LDA #(!RingPalette+!RingSprite+1)   : STA !RingLocation+2
-    LDA #(!RingPalette+!RingSprite+$10) : STA !RingLocation+$40
-    LDA #(!RingPalette+!RingSprite+$11) : STA !RingLocation+$42
-    SEP #$20
+    !X #= ring_locx(<lc>)
+    !Y #= ring_locy(<lc>)
+    !SX #= ring_sprx(<id>)
+    !SY #= ring_spry(<id>)
+    %DrawExtraMenuSprite16x16(!X, !Y, !SX, !SY, <palette>, 1)
 endmacro
 
 macro DrawRing(flag,lc,id,palette)
@@ -264,11 +385,32 @@ macro DrawRing(flag,lc,id,palette)
 endmacro
 
 macro RemoveRing(lc)
-    !RingLocation = $15C8+ring_locx(<lc>)+ring_locy(<lc>)
-    LDA #$24F5 : STA !RingLocation
-    LDA #$24F5 : STA !RingLocation+2
-    LDA #$24F5 : STA !RingLocation+$40
-    LDA #$24F5 : STA !RingLocation+$42
+    !X = ring_locx(<lc>)
+    !Y = ring_locy(<lc>)
+    %RemoveMenuSprite16x16(!X, !Y, 0)
+endmacro
+
+macro DrawR()
+    %DrawExtraMenuSprite8x8(0, 0, 0, 2, !PaletteYellow, 0)
+    %DrawExtraMenuSprite8x8(0, 1, 0, 3, !PaletteYellow, 0)
+endmacro
+
+macro DrawSmallRingsText()
+    !P = !PaletteYellow
+    !SX = 1 : !SY = 2
+    !X  = 1 : !Y  = -1
+    %DrawExtraMenuSprite8x8(!X,   !Y, !SX,   !SY, !P, 0)
+    %DrawExtraMenuSprite8x8(!X+1, !Y, !SX+1, !SY, !P, 0)
+    %DrawExtraMenuSprite8x8(!X+2, !Y, !SX+2, !SY, !P, 0)
+    %DrawExtraMenuSprite8x8(!X+3, !Y, !SX+3, !SY, !P, 0)
+endmacro
+
+; Item Drawing Macros
+
+function item_locx(lc) = 3+(2*lc)
+
+macro RemoveMenuItemSprite(lc)
+    %RemoveMenuSprite16x16(item_locx(<lc>), 3, 0)
 endmacro
 
 ; Menu Drawing
@@ -304,21 +446,11 @@ DrawRingSwitchText:
 
     REP #$20
 
-    LDA.w #(!RingSwitchText+0) : STA.l !RingSwitchTextLoc+$0
-    LDA.w #(!RingSwitchText+1) : STA.l !RingSwitchTextLoc+$2
-    LDA.w #(!RingSwitchText+2) : STA.l !RingSwitchTextLoc+$4
-    LDA.w #(!RingSwitchText+3) : STA.l !RingSwitchTextLoc+$6
-    LDA.w #(!RingSwitchText+4) : STA.l !RingSwitchTextLoc+$8
-    LDA.w #(!RingSwitchText+5) : STA.l !RingSwitchTextLoc+$A
-    LDA.w #(!RingSwitchText+6) : STA.l !RingSwitchTextLoc+$C
-
-    LDA.w #(!RingSwitchText+$10) : STA.l !RingSwitchTextLoc+$40
-    LDA.w #(!RingSwitchText+$11) : STA.l !RingSwitchTextLoc+$42
-    LDA.w #(!RingSwitchText+$12) : STA.l !RingSwitchTextLoc+$44
-    LDA.w #(!RingSwitchText+$13) : STA.l !RingSwitchTextLoc+$46
-    LDA.w #(!RingSwitchText+$14) : STA.l !RingSwitchTextLoc+$48
-    LDA.w #(!RingSwitchText+$15) : STA.l !RingSwitchTextLoc+$4A
-    LDA.w #(!RingSwitchText+$16) : STA.l !RingSwitchTextLoc+$4C
+    %DrawExtraMenuSprite16x16(10, 5, 0, 0, !PaletteRed, 0)
+    %DrawExtraMenuSprite16x16(12, 5, 2, 0, !PaletteRed, 0)
+    %DrawExtraMenuSprite16x16(14, 5, 4, 0, !PaletteRed, 0)
+    %DrawExtraMenuSprite8x8(16, 5, 6, 0, !PaletteRed, 0)
+    %DrawExtraMenuSprite8x8(16, 6, 6, 1, !PaletteRed, 0)
 
     SEP #$20
 RTS
@@ -327,53 +459,28 @@ DrawAbilitiesBox:
     LDA #$01 : STA !WhichMenu
     REP #$30
 
-    .drawCorners
-        LDA.w #$24FB : STA $1542
-        ORA.w #$8000 : STA $1742
-        ORA.w #$4000 : STA $1766
-        EOR.w #$8000 : STA $1566
+    %DrawABoxCorners(!PaletteRed)
 
-    CLC
-    LDX.w #$0000
-    LDY.w #$0006
+    ; Draw 'A' button icon
+    %DrawMenuSpriteYFlipped8x8(0, 0, 0, 15, !PaletteRed, 0)
+    %DrawMenuSprite8x8(0, 1, 2, 15, !PaletteRed, 0)
 
-    .drawVerticalEdges
-        LDA.w #$24FC : STA $1582, X
-        ORA.w #$4000 : STA $15A6, X
+    ; Draw little 'do' text
+    %DrawMenuSprite8x8(1, -1, 2, 8, !PaletteRed, 0)
+    %DrawMenuSprite8x8(2, -1, 3, 8, !PaletteRed, 0)
 
-        TXA : ADC.w #$0040 : TAX
-
-        DEY : BPL .drawVerticalEdges
-
-    LDX.w #$0000
-    LDY.w #$0010
-
-    .drawHorizontalEdges
-        LDA.w #$24F9 : STA $1544, X
-        ORA.w #$8000 : STA $1744, X
-
-        INX #2
-
-        DEY : BPL .drawHorizontalEdges
-
-        ; Draw 'A' button icon
-        LDA.w #$A4F0 : STA $1584
-        LDA.w #$24F2 : STA $15C4
-        LDA.w #$2482 : STA $1546
-        LDA.w #$2483 : STA $1548
-
+    ; Remove Rings
+    %RemoveRing(0)
+    %RemoveRing(1)
+    %RemoveRing(2)
+    %RemoveRing(3)
+    %RemoveRing(4)
+    %RemoveRing(5)
+    %RemoveRing(6)
 
     LDX #$0000
-    ;.removeRings
-        %RemoveRing(0)
-        %RemoveRing(1)
-        %RemoveRing(2)
-        %RemoveRing(3)
-        %RemoveRing(4)
-        %RemoveRing(5)
-        %RemoveRing(6)
-
     SEP #$30
+    JSL DrawAbilityIcons
     LDA.l RingsEnabled : BEQ .end
        JSR DrawRingSwitchText
     .end
@@ -383,65 +490,39 @@ DrawRingBox:
     LDA #$02 : STA !WhichMenu
     REP #$30
 
-    .drawCorners
-        LDA.w #$28FB : STA $1542
-        ORA.w #$8000 : STA $1742
-        ORA.w #$4000 : STA $1766
-        EOR.w #$8000 : STA $1566
-
-    CLC
-    LDX.w #$0000
-    LDY.w #$0006
-
-    .drawVerticalEdges
-        LDA.w #$28FC : STA $1582, X
-        ORA.w #$4000 : STA $15A6, X
-        TXA : ADC.w #$0040 : TAX
-
-        DEY : BPL .drawVerticalEdges
-
-    LDX.w #$0000
-    LDY.w #$0010
-
-    .drawHorizontalEdges
-        LDA.w #$28F9 : STA $1544, X
-        ORA.w #$8000 : STA $1744, X
-
-        INX #2
-
-        DEY : BPL .drawHorizontalEdges
+    %DrawABoxCorners(!PaletteYellow)
 
     ; Remove 'A' button icon
-    LDA.w #$24F5 : STA $1584
-    LDA.w #$24F5 : STA $15C4
+    %RemoveMenuSprite8x8(0,0,0)
+    %RemoveMenuSprite8x8(0,1,0)
+
+    ; Remove Ability Items
+    %RemoveMenuItemSprite(0)
+    %RemoveMenuItemSprite(1)
+    %RemoveMenuItemSprite(2)
+    %RemoveMenuItemSprite(3)
 
     ; Remove ring switch text
-    LDA.w #$24F5 : STA $16D8
-    LDA.w #$24F5 : STA $16DA
-    LDA.w #$24F5 : STA $16DC
-    LDA.w #$24F5 : STA $16DE
-    LDA.w #$24F5 : STA $16E0
-    LDA.w #$24F5 : STA $16E2
-    LDA.w #$24F5 : STA $16E4
+    %RemoveMenuSprite16x16(10,5,0)
+    %RemoveMenuSprite16x16(12,5,0)
+    %RemoveMenuSprite16x16(14,5,0)
+    %RemoveMenuSprite8x8(16,5,0)
+    %RemoveMenuSprite8x8(16,6,0)
 
-    LDA.w #$24F5 : STA $1718
-    LDA.w #$24F5 : STA $171A
-    LDA.w #$24F5 : STA $171C
-    LDA.w #$24F5 : STA $171E
-    LDA.w #$24F5 : STA $1720
-    LDA.w #$24F5 : STA $1722
-    LDA.w #$24F5 : STA $1724
+    ; Draw text
+    %DrawR()
+    %DrawSmallRingsText()
 
     SEP #$30
 RTS
 
 DrawRingIcons:
-    %DrawRing(!RupeeRingFlag,   0, 0, 3)
-    %DrawRing(!GravityRingFlag, 1, 1, 3)
-    %DrawRing(!FireRingFlag,    2, 3, 1)
-    %DrawRing(!LightRingFlag,   3, 4, 2)
-    %DrawRing(!PowerRingFlag,   4, 5, 7)
-    %DrawRing(!GuardRingFlag,   5, 6, 3)
+    %DrawRing(!RupeeRingFlag,   0, 0, !PaletteBlue)
+    %DrawRing(!GravityRingFlag, 1, 1, !PaletteBlue)
+    %DrawRing(!FireRingFlag,    2, 3, !PaletteRed)
+    %DrawRing(!LightRingFlag,   3, 4, !PaletteYellow)
+    %DrawRing(!PowerRingFlag,   4, 5, !PaletteGreen)
+    %DrawRing(!GuardRingFlag,   5, 6, !PaletteBlue)
 RTS
 
 ; Handling Menu Input
@@ -467,10 +548,8 @@ NoEquip:
     JSR HandleRingMenuToggle
 
     LDA $F4 : BEQ .noButtonPress
-
-    LDA.b #$05 : STA $0200
-
-    RTL
+        LDA.b #$05 : STA $0200
+        RTL
     .noButtonPress
 RTL
 
@@ -648,6 +727,4 @@ DamageSprite:
     .afterExtraDamage
     LDA $0E50,X : STA $00
 RTL
-
-
 
