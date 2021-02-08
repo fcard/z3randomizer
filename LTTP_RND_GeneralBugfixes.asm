@@ -540,6 +540,16 @@ Sprite_ApplySpeedTowardsPlayerLong:
 org $06EAA6
 Sprite_DirectionToFacePlayerLong:
 
+org $06ED39
+SwordSlashDamageTable:
+org $06ED3D
+SwordSpinDamageTable:
+org $06ED41
+SwordStabDamageTable:
+
+org $06EE1B
+PlayerWeaponDealDamage.notZeroDamageType: ; inside a block named "*$36D3F-$36EC0 LONG"
+
 org $06F12F
 Sprite_CheckDamageToPlayerSameLayerLong:
 

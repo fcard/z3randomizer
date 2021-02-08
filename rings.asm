@@ -721,10 +721,26 @@ DamageSprite:
     LDA !PowerRingFlag : BEQ .afterExtraDamage
         CMP #01 : BNE .swordRing
         ;.powerRing
-            %ExtraDamage(1)
-        .swordRing
             %ExtraDamage(2)
+        .swordRing
+            %ExtraDamage(4)
     .afterExtraDamage
     LDA $0E50,X : STA $00
 RTL
+
+DamagingSpecialItem:
+    CMP #02 : BNE .isntSwordBeam
+        LDA !LightRingFlag : BEQ +
+            PHB : LDA.b #bank(SwordSlashDamageTable) : PHA : PLB
+            PHX : LDA $7EF35A : TAX : LDA SwordSlashDamageTable, X : ASL
+            PLX : PLB
+            JML PlayerWeaponDealDamage.notZeroDamageType
+        +
+            LDA #01
+    .isntSwordBeam
+RTL
+
+
+
+
 
