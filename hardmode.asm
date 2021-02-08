@@ -80,6 +80,7 @@ GetItemDamageValue:
 	CPX.b #$3b : BEQ .hookshot
 	CPX.b #$3c : BEQ .hookshot
 	CPX.b #$3d : BEQ .hookshot
+	CPX.b #$09 : BEQ .swordBeam
 
 	.normal
 	lda $0db8f1,x ;what we wrote over
@@ -92,6 +93,11 @@ RTL
 	.noDamage
 	LDA.b #$00
 RTL
+  .swordBeam
+  JSL SwordBeamDamage
+RTL
+
+
 ;--------------------------------------------------------------------------------
 ;Argument : A = id we want to find return 00 if none found, 01 if found
 SearchAncilla:
