@@ -738,6 +738,25 @@ SwordBeamDamage:
          LDA #02
 RTL
 
+macro SpinAttackHitBox(minusx,minusy,size)
+    LDA $22 : SEC : SBC.b #<minusx> : STA $00
+    LDA $23 : SBC.b #$00 : STA $08
+
+    LDA $20 : SEC : SBC.b #<minusy> : STA $01
+    LDA $21 : SBC.b #$00 : STA $09
+
+    LDA.b #<size> : STA $02
+    INC A         : STA $03
+endmacro
+
+SpinAttackHitBox:
+    LDA !LightRingFlag : BEQ .noLightRing
+        %SpinAttackHitBox($0E+8,$0A+8,$2C+16)
+        RTL
+
+    .noLightRing
+        %SpinAttackHitBox($0E,$0A,$2C)
+RTL
 
 
 
