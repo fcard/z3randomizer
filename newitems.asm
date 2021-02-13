@@ -838,15 +838,15 @@ AddReceivedItemExpanded:
 	db  2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 ; Free Compass
 	db  4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4 ; Free Big Key
 	db  4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4 ; Free Small Key
-	db  4 ; Rupee Ring
-  db  4 ; Gravity Ring
-  db  4, 4 ; Fire/Flame Ring
+	db  2 ; Rupee Ring
+  db  2 ; Gravity Ring
+  db  1, 1 ; Fire/Flame Ring
   db  4 ; Light Ring
   db  4,  4 ; Power/Sword Ring
-  db  4,  4 ; Guard/Diamond Ring
-  db  4 ; Progressive Fire Ring
+  db  2,  2 ; Guard/Diamond Ring
+  db  1 ; Progressive Fire Ring
   db  4 ; Progressive Power Ring
-  db  4 ; Progressive Guard Ring
+  db  2 ; Progressive Guard Ring
 	db  4, 4, 4, 4 ; Unused
 	db  4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4 ; Unused
 	db  4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4 ; Unused

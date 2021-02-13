@@ -2625,7 +2625,7 @@ DrawMoonPearl:
 org $0DED03 ; change DrawMoonPearl's RTS to a RTL
 RTL
 
-org $089900 ; ancilla_bomb:576 - Bomb_CheckSpriteAndPlayerDamage: LDA $7EF35B
+org $089900 ; ancilla_bomb:575 - Bomb_CheckSpriteAndPlayerDamage: LDA $7EF35B
 JSL BombDamage
 RTS
 

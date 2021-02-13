@@ -195,8 +195,8 @@ ExtraMenuNMIUpdate:
     LDA.b #$80 : STA $2115
 
     LDA.l !UpdateMenuRingGraphics : BEQ +
+        DEC : STA.l !UpdateMenuRingGraphics
         JSR LoadExtraMenuGfx
-        LDA #$00 : STA.l !UpdateMenuRingGraphics
     +
 
     REP #$10
@@ -205,16 +205,18 @@ RTL
 ; Decompression and Transfer to VRAM
 
 DecompExtraMenuGfx:
-    STZ $00
-    LDA #$40 : STA $01
-    LDA #$7F : STA $02 : STA $05
-    LDA #$31 : STA $CA
-    LDA #$F0 : STA $C9
-    LDA #$00 : STA $C8
-    JSL DecompGfx
+    if !CompressMenuRingsGFX != 0
+        STZ $00
+        LDA #$40 : STA $01
+        LDA #$7F : STA $02 : STA $05
+        LDA #$31 : STA $CA
+        LDA #$F0 : STA $C9
+        LDA #$00 : STA $C8
+        JSL DecompGfx
+    endif
 
     SEP #$20
-    LDA.b #$01 : STA.l !UpdateMenuRingGraphics
+    LDA.b #$02 : STA.l !UpdateMenuRingGraphics
 RTS
 
 macro GfxTransfer(sourcemath, source, sourcebank, size, target)
@@ -239,7 +241,22 @@ macro GfxTransfer(sourcemath, source, sourcebank, size, target)
 endmacro
 
 LoadExtraMenuGfx:
-    %GfxTransfer(0, $4000, $7F, $0400, $F800/2)
+    if !CompressMenuRingsGFX != 0
+        CMP #$01 : BNE .secondPart
+        ;.firstPart
+            %GfxTransfer(0, $4000, $7F, $0200, $F800/2)
+            RTS
+        .secondPart
+            %GfxTransfer(0, $4200, $7F, $0200, $FA00/2)
+    else
+        CMP #$01 : BNE .secondPart
+        ;.firstPart
+            %GfxTransfer(0, $F000, $31, $0200, $F800/2)
+            RTS
+        .secondPart
+            %GfxTransfer(0, $F200, $31, $0200, $FA00/2)
+    else
+    endif
 RTS
 
 ; Sprite Drawing Macros
@@ -410,10 +427,10 @@ endmacro
 
 ; Item Drawing Macros
 
-function item_locx(lc) = 3+(2*lc)
+function item_locx(lc) = 2+(4*lc)
 
 macro RemoveMenuItemSprite(lc)
-    %RemoveMenuSprite16x16(item_locx(<lc>), 3, 0)
+    %RemoveMenuSprite16x16(item_locx(<lc>), 2, 0)
 endmacro
 
 ; Menu Drawing
@@ -421,8 +438,8 @@ endmacro
 RestoreNormalMenuAux:
     LDA !WhichMenu : CMP #02 : BEQ +
         JSL DrawMoonPearl
-        JSL DrawProgressIcons
     +
+    JSL DrawProgressIcons
 RTL
 
 DrawLowerItemBox:
@@ -479,10 +496,10 @@ DrawAbilitiesBox:
     %RemoveRing(3)
     %RemoveRing(4)
     %RemoveRing(5)
-    %RemoveRing(6)
 
     LDX #$0000
     SEP #$30
+    JSL DrawMoonPearl
     JSL DrawAbilityIcons
     LDA.l RingsEnabled : BEQ .end
        JSR DrawRingSwitchText

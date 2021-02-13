@@ -34,6 +34,7 @@ db #$20, #$19, #$08, #$31 ; year/month/day
 !BLT = "BCC"
 !BGE = "BCS"
 
+
 ; Rando Specific SRAM assignments
 !SHOP_PURCHASE_COUNTS = "$7EF302" ;$7EF302 - $7EF33F (temporary home)
 !INVENTORY_SWAP = "$7EF38C" ; [w]
@@ -85,6 +86,8 @@ db #$20, #$19, #$08, #$31 ; year/month/day
 !REG_MUSIC_CONTROL = $012B
 ;!REG_MUSIC_CONTROL = $012C
 !REG_MUSIC_CONTROL_REQUEST = $012C
+
+!CompressMenuRingsGFX = 0
 
 ;================================================================================
 
@@ -274,7 +277,11 @@ warnpc $31E501
 
 org $31F000
 GFX_Rings:
-incbin menurings.gfx
+if !CompressMenuRingsGFX != 0
+    incbin menurings.gfx
+else
+    incbin menurings.bin
+endif
 warnpc $31F400
 
 org $31F400

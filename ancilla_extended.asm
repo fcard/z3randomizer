@@ -525,6 +525,7 @@ AncillaExt_LightSpinClosingSpin:
          PHB : PHK : PLB
 
          LDA $0C68, X : CMP #$03 : BCC .blue
+         ;.yellow
              LDA #$02 : STA $04
              BRA .doneColors
          .blue

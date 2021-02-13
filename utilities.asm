@@ -339,12 +339,12 @@ RTL
 	;db $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08 ; *EVENT*
 	db $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08 ; Free Big Key
 	db $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08 ; Free Small Key
-	db $04 ; Rupee Ring
-  db $04 ; Gravity Ring
-  db $04, $04 ; Fire/Flame Ring
+	db $02 ; Rupee Ring
+  db $02 ; Gravity Ring
+  db $01, $01 ; Fire/Flame Ring
   db $04 ; Light Ring
   db $04, $04 ; Power/Sword Ring
-  db $04, $04 ; Guard/Diamond Ring
+  db $02, $02 ; Guard/Diamond Ring
   db $F7 ; Progressive Fire Ring
   db $F6 ; Progressive Power Ring
   db $F5 ; Progressive Guard Ring
