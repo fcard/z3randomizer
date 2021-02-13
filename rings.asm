@@ -3,15 +3,15 @@ RingsEnabled:
     db 01 ; 00 - Rings disabled, 01 - Rings Enabled
 
 ; Properties for sprites for new items:
-; 0000000F
+; 000000BF
 ; |||||||'--1 = Is Fire / 0 = Isn't Fire
-; ||||||'---Unused
-; |||||'---Unused
-; ||||'---Unused
-; |||'---Unused
-; ||'---Unused
-; |'---Unused
-; '---Unused
+; ||||||'---1 = Is Bomb / 0 = Isn't Bomb
+; |||||'----Unused
+; ||||'-----Unused
+; |||'------Unused
+; ||'-------Unused
+; |'--------Unused
+; '---------Unused
 SpecialSpriteProperties:
     ; 0x00-0x0F
     db $00, $00, $00, $00
@@ -40,7 +40,7 @@ SpecialSpriteProperties:
     ; 0x40-0x4F
     db $00, $00, $00, $00
     db $00, $00, $00, $00
-    db $00, $00, $00, $00
+    db $00, $00, $02, $00 ; ??, ??, Bomb
     db $00, $00, $00, $00
 
     ; 0x50-0x5F
@@ -59,10 +59,10 @@ SpecialSpriteProperties:
     db $00, $00, $00, $00
     db $00, $00, $00, $00
     db $00, $00, $00, $00
-    db $00, $00, $00, $00
+    db $00, $00, $01, $00 ; ??, ??, Guruguru Bar
 
     ; 0x80-0x8F
-    db $00, $00, $00, $00
+    db $01, $00, $00, $00 ; Winder
     db $00, $00, $00, $00
     db $00, $00, $00, $00
     db $00, $00, $00, $00
@@ -124,6 +124,9 @@ RTL
 !BombDamage = $7FFFFB
 !FireDamage = $7FFFFA
 !SpikeDamage = $7FFFF9
+
+!SpinAnimationFrame = $7FFFE0
+!SpinAnimationAux = $7FFFE1
 
 ; Ring Flags
 !RupeeRingFlag = $7F6600
@@ -571,23 +574,33 @@ RTL
 
 ; Add collected rupees to the total amount, handle Rupee Charm
 AddCollectedRupees:
-   ; Input:  A register = amount to add
-   ; Output: A register = total rupees
-   PHA
-   LDA !RupeeRingFlag : AND #$00FF : BEQ + ; check if we have the rupee ring
-       PLA : ASL ; if we have it, double rupee amount
-       ADC $7EF360 ; Add amount to current rupee count
-       RTL
-   +
-   PLA
-   ADC $7EF360 ; Add amount to current rupee count
+    ; Input:  A register = amount to add
+    ; Output: A register = total rupees after addition
+    PHA
+    LDA !RupeeRingFlag : AND #$00FF : BEQ + ; check if we have the rupee ring
+        PLA : ASL ; if we have it, double rupee amount
+        ADC $7EF360 ; Add amount to current rupee count
+        RTL
+    +
+    PLA
+    ADC $7EF360 ; Add amount to current rupee count
 RTL ; following code will sta $7EF360
+
+AddDungeonRupees:
+    ; Output: A register = total rupees before adding 5 more
+    LDA !RupeeRingFlag : AND #$00FF : BEQ + ; check if we have the rupee ring
+        LDA $07EF360 : CLC : ADC #$0005 ; Add 5 more
+        RTL
+    +
+    LDA $07EF360
+RTL
+
 
 ; Add rupees from chests to the total amount, handle Rupee Charm
 AddChestRupees:
     ; Input: $00 = amount to add
-    ; Output: A register = total rupees
-    LDA !RupeeRingFlag : AND #$00FF : BEQ + ; check if we have the rupee charm
+    ; Output: A register = total rupees after addition
+    LDA !RupeeRingFlag : AND #$00FF : BEQ + ; check if we have the rupee ring
         LDA $07EF360
         CLC
         ADC $00
@@ -615,6 +628,8 @@ DoPitDamage:
         LDA.b #$00 : STA $7EF36D
     .notDead
 RTL
+
+; Guard/Fire Rings
 
 !DiminishingEffect = 0 ; Guard Ring effect goes down with armor upgrades (0:no, 1:yes)
 !MinimumDamage = 01 ; Minimum damage after ring damage reduction
@@ -701,6 +716,9 @@ GeneralDamage:
     LDA.l !SpriteProp, X : AND #$01 : BEQ .notFire
         LDA #1 : STA !FireDamage
     .notFire
+    LDA.l !SpriteProp, X : AND #$02 : BEQ .notBomb
+        LDA #1 : STA !BombDamage
+    .notBomb
     PLA
     JSL.l LoadModifiedArmorLevel
 RTL
@@ -710,6 +728,8 @@ SpikeDamage:
     LDA $7EF35B : TAY
     ;LDA $????, Y : STA $0373
 RTL
+
+; Power Rings
 
 macro ExtraDamage(extra)
     LDA #<extra> : CLC : ADC $0CE2,X : BCC +
@@ -728,10 +748,15 @@ DamageSprite:
     LDA $0E50,X : STA $00
 RTL
 
+; Light Ring
+
+SwordDamageTable:
+db 0, 2, 4, 8, 16
+
 SwordBeamDamage:
      LDA !LightRingFlag : BEQ .noLightRing
-         PHB : LDA.b #bank(SwordSlashDamageTable) : PHA : PLB
-         PHX : LDA $7EF35A : TAX : LDA SwordSlashDamageTable, X : ASL
+         PHB : LDA.b #bank(SwordDamageTable) : PHA : PLB
+         PHX : LDA $7EF359 : TAX : LDA SwordDamageTable, X
          PLX : PLB
          RTL
      .noLightRing
@@ -746,18 +771,26 @@ macro SpinAttackHitBox(minusx,minusy,size)
     LDA $21 : SBC.b #$00 : STA $09
 
     LDA.b #<size> : STA $02
-    INC A         : STA $03
+    INC A       : STA $03
 endmacro
 
 SpinAttackHitBox:
     LDA !LightRingFlag : BEQ .noLightRing
-        %SpinAttackHitBox($0E+8,$0A+8,$2C+16)
+        %SpinAttackHitBox($000E+6,$000A+6,$002C+12)
         RTL
 
     .noLightRing
-        %SpinAttackHitBox($0E,$0A,$2C)
+        %SpinAttackHitBox($000E,$000A,$002C)
 RTL
 
 
-
-
+SpinAttackAnimationTimers:
+    LDA !LightRingFlag : BEQ .noLightRing
+        PHX
+        JSL AncillaExt_AddLightSpin
+        PLX
+    .noLightRing
+    LDA #$02 : STA $03B1, X
+    LDA #$4C : STA $0C5E, X
+    LDA #$08 : STA $039F, X
+RTL

@@ -2664,12 +2664,18 @@ endif
 org $06D1D2 ; Rupees dropped in the world (ADC $7EF360)
 JSL AddCollectedRupees
 
+org $07BB6D ; Rupees from dungeon blue rupees
+JSL AddDungeonRupees
+
+org $07C5FA ; Rupees from dungeon blue rupees
+JSL AddDungeonRupees
+
 org $09ADA0 ; Rupees from chests
 JSL AddChestRupees
 NOP #3
 
-;org $?????? ; Rupees from arrow game (sprite_archery_game_guy.asm:424 : ADC $7EF360)
-;JSL AddCollectedRupees
+org $05843F ; Rupees from arrow game (sprite_archery_game_guy.asm:424 : ADC $7EF360)
+JSL AddCollectedRupees
 
 ;================================================================================
 
@@ -2688,5 +2694,37 @@ org $06F59A ; Spin Attack Hitbox
 PLX : JSL SpinAttackHitBox
 RTS
 
-;================================================================================
+org $08D8BA
+JSL SpinAttackAnimationTimers
+BRA SpinAttackAnimationTimers.returnPoint
+org $08D8C9
+SpinAttackAnimationTimers.returnPoint:
 
+org $08836F
+    JML AncillaExt_JumpToRoutine
+
+org $088373
+AncillaExt_Return:
+RTS
+
+org $088374
+Ancilla_SetSafeOam_XY_Long:
+    PHB : PHK : PLB
+    JSR Ancilla_SetSafeOam_XY
+    PLB
+RTL
+
+org $088384
+Ancilla_SetOam_XY_Long2:
+    PHB : PHK : PLB
+    JSR Ancilla_SetOam_XY
+    PLB
+RTL
+
+org $08F6F3
+Ancilla_SetOam_XY:
+
+org $099CF4
+JSL AncillaExt_LoadMaxSpriteCount
+
+;================================================================================

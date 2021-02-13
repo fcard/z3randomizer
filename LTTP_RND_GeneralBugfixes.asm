@@ -197,6 +197,7 @@ incsrc elder.asm
 incsrc toast.asm
 incsrc darkroomitems.asm
 incsrc rings.asm
+incsrc ancilla_extended.asm
 warnpc $A58000
 
 ;org $228000 ; contrib area
@@ -540,13 +541,6 @@ Sprite_ApplySpeedTowardsPlayerLong:
 org $06EAA6
 Sprite_DirectionToFacePlayerLong:
 
-org $06ED39
-SwordSlashDamageTable:
-org $06ED3D
-SwordSpinDamageTable:
-org $06ED41
-SwordStabDamageTable:
-
 org $06EE1B
 PlayerWeaponDealDamage.notZeroDamageType: ; inside a block named "*$36D3F-$36EC0 LONG"
 
@@ -568,8 +562,128 @@ Unknown_Method_0: ; In US version disassembly simply called "$3E6A6 IN ROM"
 org $07F4AA
 Sprite_CheckIfPlayerPreoccupied:
 
+org $088435
+Ancilla_IceShotSparkle:
+
+org $08851B
+Ancilla_SomarianBlast:
+
+org $0886D2
+Ancilla_FireShot:
+
+org $088852
+Ancilla_Unknown:
+
+org $088D19
+Ancilla_BeamHit:
+
+org $0890FC
+Ancilla_Boomerang:
+
+org $0893E8
+Ancilla_WallHit:
+
+org $0893FF
+Ancilla_SwordWallHit:
+
+org $0895E5
+Ancilla_Bomb:
+
+org $089FDA
+Ancilla_DoorDebris:
+
+org $08A155
+Ancilla_Arrow:
+
+org $08A47F
+Ancilla_HaltedArrow:
+
+org $08A501
+Ancilla_IceShot:
+
+org $08A55A
+Ancilla_IceShotSpread:
+
+org $08A632
+Ancilla_Unused_:
+
+org $08A831
+Ancilla_Unknown2:
+
+org $08A833
+Ancilla_JumpSplash:
+
+org $08A907
+Ancilla_Unknown3:
+
+org $08A909
+Ancilla_HitStars:
+
+org $08A9CD
+Ancilla_ShovelDirt:
+
+org $08AA59
+Ancilla_BlastWallFireball:
+
+org $08AC32
+Ancilla_BlastWall:
+
+org $08AAC4
+Ancilla_EtherSpell:
+
+org $08B0F2
+Ancilla_BombosSpell:
+
+org $08B68E
+Ancilla_QuakeSpell:
+
+org $08BAD4
+Ancilla_MagicPowder:
+
+org $08BBE0
+Ancilla_DashTremor:
+
+org $08BCB6
+Ancilla_DashDust:
+
+org $08BD98
+Ancilla_Hookshot:
+
+org $08C037
+Ancilla_BedSpread:
+
+org $08C0B8
+Ancilla_SleepIcon:
+
+org $08C18B
+Ancilla_VictorySparkle:
+
+org $08C20E
+Ancilla_SwordChargeSpark:
+
+org $08C283
+Ancilla_SwordCeremony:
+
 org $08C3AE
 Ancilla_ReceiveItem:
+
+org $08C716
+Ancilla_WishPondItem:
+
+org $08C802
+Ancilla_HappinessPondRupees:
+
+org $08CAB0
+Ancilla_MilestoneItem:
+
+org $08CA25
+Ancilla_ObjectSplash:
+
+org $08CC16
+Ancilla_RisingCrystal:
+
+org $08CCC4
+Ancilla_BreakTowerSeal:
 
 org $08CE93
 Ancilla_BreakTowerSeal_draw_single_crystal:
@@ -580,8 +694,80 @@ Ancilla_BreakTowerSeal_stop_spawning_sparkles:
 org $08CF59
 BreakTowerSeal_ExecuteSparkles:
 
+org $08D061
+Ancilla_Flute:
+
+org $08D1FC
+Ancilla_TravelBirdIntro:
+
+org $08D3E0
+Ancilla_MorphPoof:
+
+org $08D53D
+Ancilla_BushPoof:
+
+org $08D4BE
+Ancilla_DwarfPoof:
+
+org $08D67E
+Ancilla_SwordSwingSparkle:
+
+org $08D7D6
+Ancilla_InitialSpinSpark:
+
+org $08D921
+Ancilla_SpinSpark:
+
+org $08DB48
+Ancilla_InitialCaneSpark:
+
+org $08DC94
+Ancilla_CaneSpark:
+
+org $08DDE9
+Ancilla_SwordBeam:
+
+org $08DDEE
+Ancilla_SwordFullChargeSpark:
+
+org $08DE0C
+Ancilla_TravelBird:
+
+org $08E377
+Ancilla_SomarianBlock:
+
+org $08E983
+Ancilla_Unknown4:
+
+org $08E9FA
+Ancilla_SomarianBlockFizzle:
+
+org $08EB50
+Ancilla_SomarianBlockDivide:
+
+org $08EC25
+Ancilla_LampFlame:
+
+org $08ECC1
+Ancilla_WaterfallSplash:
+
+org $08EE13
+Ancilla_Gravestone:
+
+org $08EFAC
+Ancilla_SkullWoodsFire:
+
+org $08EA95
+Ancilla_SomarianPlatformPoof:
+
+org $08F19F
+Ancilla_SuperBombExplosion:
+
 org $08F710
 Ancilla_SetOam_XY_Long:
+
+org $08F714
+Ancilla_SetSafeOam_XY:
 
 org $0985E2 ; (break on $0985E4)
 AddReceivedItem:
