@@ -593,7 +593,7 @@ Ancilla_WallHit:
 org $0893FF
 Ancilla_SwordWallHit:
 
-org $0895E5
+org $08955A
 Ancilla_Bomb:
 
 org $089FDA

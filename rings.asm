@@ -56,7 +56,7 @@ SpecialSpriteProperties:
     db $00, $00, $00, $00
 
     ; 0x70-0x7F
-    db $00, $00, $00, $00
+    db $01, $00, $00, $00 ; helmasaur fireball
     db $00, $00, $00, $00
     db $00, $00, $00, $00
     db $00, $00, $01, $00 ; ??, ??, Guruguru Bar
@@ -654,8 +654,14 @@ RTL
 macro BranchIfGreaterOrEqual(minimum, address)
     if <minimum> == 0
         BNE <address>
+    elseif <minimum> == 1
+        BEQ ?less
+        BPL <address>
+        ?less:
     else
+        BCC ?less
         CMP #<minimum> : BCS <address>
+        ?less:
     endif
 endmacro
 
