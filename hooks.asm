@@ -2688,6 +2688,53 @@ JSL DamageSprite : NOP
 ;================================================================================
 
 ;--------------------------------------------------------------------------------
+; Fire Ring
+;--------------------------------------------------------------------------------
+org $09B329 ; garnish_ganon_bat_flame_objects.asm:79 : LDA chr_indices, X
+; routine: Garnish_GanonBatFlame (which is also used by Trinexx's fire)
+; we move the rest of the routine here, as well as all of the routine's
+; tables, because of the difficult of changing a single line but also to
+; free space in bank $09.
+JML GarnishFireDamage
+
+org $09B284 ; garnish_ganon_bat_flame_objects.asm:8 : db $AC, $AE...
+; Space freed from us moving the tables from Garnish_GanonBatFlame
+
+Garnish_SetOamPropsAndLargeSizeLong:
+   PHB : PHK : PLB
+   JSR Garnish_SetOamPropsAndLargeSize
+   PLB
+RTL
+
+; move the table Garnish_BabusuFlash.chr here so we
+; have space after the subroutine that comes before
+; it, Garnish_CheckPlayerCollision.
+Garnish_BabusuFlash_chrNew:
+    db $A8, $8A, $86, $86
+
+warnpc $09B2B2 ; End of the freed space
+
+org $09B459 ; garnish_lightning_trail.asm:50
+Garnish_CheckPlayerCollision:
+
+org $09B482 ; garnish_lightning_trail.asm:64 : LDA.b #$10 : STA $46
+JSL GarnishOnCollision
+
+!GarnishFire = $7FFFF8 ; flag set by GarnishFireDamage,
+                       ; checked and reset by Garnish_CheckPlayerCollision
+
+org $09B495 ; garnish_lightning_trail.asm:71 : RTS
+; end of Garnish_CheckPlayerCollision
+LDA #00 : STA !GarnishFire
+RTS
+
+org $09B4B3  ; garnish_babusu_flash.asm:31 : LDA .chr, X
+LDA Garnish_BabusuFlash_chrNew, X
+
+org $09B70C ; garnish_mothula_beam_trail.asm:25
+Garnish_SetOamPropsAndLargeSize:
+
+;--------------------------------------------------------------------------------
 ; Light Ring
 ;--------------------------------------------------------------------------------
 org $06F59A ; Spin Attack Hitbox

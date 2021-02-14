@@ -88,7 +88,7 @@ SpecialSpriteProperties:
     ; 0xC0-0xCF
     db $00, $00, $00, $00
     db $00, $00, $00, $00
-    db $00, $00, $00, $00
+    db $00, $01, $00, $00 ; ??, ganon firebat
     db $00, $00, $00, $00
 
     ; 0xD0-0xDF
@@ -124,9 +124,7 @@ RTL
 !BombDamage = $7FFFFB
 !FireDamage = $7FFFFA
 !SpikeDamage = $7FFFF9
-
-!SpinAnimationFrame = $7FFFE0
-!SpinAnimationAux = $7FFFE1
+;!GarnishFire = $7FFFF8
 
 ; Ring Flags
 !RupeeRingFlag = $7F6600
@@ -728,20 +726,60 @@ RingDamageReduction:
     .done
 RTL
 
-BombDamage:
+BombDamage: ; called when link's bomb damages him
     LDA #1 : STA !BombDamage
     LDA $7EF35B : TAY
     LDA $980B, Y : STA $0373
 RTL
 
-GeneralDamage:
-    PHA
-    LDA.l !SpriteProp, X : AND #$01 : BEQ .notFire
+GarnishFireDamage: ; used by Trinexx's and some of Ganon's fire
+    PHB : PHK : PLB
+    LDA #1 : STA !GarnishFire ; flag for Garnish_CheckPLayerCollision
+    LDA .chr_indices, X : TAX         ; thing we wrote over
+    LDA .chr, X : INY : STA ($90), Y  ; ^
+    LDA.b #$22 : ORA .properties, X   ; ^
+    PLB ; new
+    PLX                                     ; thing we wrote over
+    JSL Garnish_SetOamPropsAndLargeSizeLong ; ^
+JML Garnish_CheckPlayerCollision            ; ^
+;---------------------------------------------------
+; Tables we had to move to make the above code work
+;---------------------------------------------------
+    .chr
+        db $AC, $AE, $66, $66, $8E, $A0, $A2
+
+    .properties
+        db $01, $41, $01, $41, $00, $00, $00
+
+    .chr_indices
+        db 7, 6, 5, 4, 5, 4, 5, 4
+        db 5, 4, 5, 4, 5, 4, 5, 4
+        db 5, 4, 5, 4, 5, 4, 5, 4
+        db 5, 4, 5, 4, 5, 4, 5, 4
+;---------------------------------------------------
+
+
+GarnishOnCollision: ; called when "garnish" objects hit Link,
+                    ; like Aghanim's lightning trail or Trinexx's fire
+    LDA !GarnishFire : BEQ +
         LDA #1 : STA !FireDamage
-    .notFire
-    LDA.l !SpriteProp, X : AND #$02 : BEQ .notBomb
-        LDA #1 : STA !BombDamage
-    .notBomb
+    +
+    LDA #$10 : STA $46 ; thing we wrote over
+RTL
+
+GeneralDamage: ; When most things hit link
+    PHA
+
+    ; Set Elemental Damage flags
+        LDA.l !SpriteProp, X : AND #$01 : BEQ .notFire
+            LDA #1 : STA !FireDamage
+        .notFire
+
+        LDA.l !SpriteProp, X : AND #$02 : BEQ .notBomb
+            LDA #1 : STA !BombDamage
+        .notBomb
+    ;---
+
     PLA
     JSL.l LoadModifiedArmorLevel
 RTL
