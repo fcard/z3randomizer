@@ -803,6 +803,7 @@ DamageSprite:
         CMP #01 : BNE .swordRing
         ;.powerRing
             %ExtraDamage(2)
+            BRA .afterExtraDamage
         .swordRing
             %ExtraDamage(4)
     .afterExtraDamage
