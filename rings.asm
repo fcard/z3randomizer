@@ -59,11 +59,11 @@ SpecialSpriteProperties:
     db $01, $00, $00, $00 ; helmasaur fireball
     db $00, $00, $00, $00
     db $00, $00, $00, $00
-    db $00, $00, $01, $00 ; ??, ??, Guruguru Bar
+    db $00, $00, $01, $01 ; ??, ??, Guruguru Bar Clockwise, Guruguru Bar Counterclockwise
 
     ; 0x80-0x8F
     db $01, $00, $00, $00 ; Winder
-    db $00, $00, $00, $00
+    db $00, $00, $00, $01 ; ??, ??, ??, Kodongo's Fire
     db $00, $00, $00, $00
     db $00, $00, $00, $00
 
