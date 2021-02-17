@@ -1,6 +1,9 @@
 ;================================================================================
 ; Hard & Masochist Mode
 ;================================================================================
+!SpikeDamage = $7FFFF9
+!IsJumping = $82
+
 CalculateSpikeFloorDamage:
 		REP #$20 ; set 16-bit accumulator
 		LDA $A0 ; these are all decimal because i got them that way
@@ -11,8 +14,10 @@ CalculateSpikeFloorDamage:
 			STA $0373
 			RTL
 		+
-	LDA $D055, Y
-	STA $0373
+  LDA !IsJumping : BNE +
+	    LDA $D055, Y
+	    STA $0373
+  +
 RTL
 ;--------------------------------------------------------------------------------
 CalculateByrnaUsage:

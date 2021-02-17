@@ -2775,3 +2775,34 @@ org $099CF4
 JSL AncillaExt_LoadMaxSpriteCount
 
 ;================================================================================
+
+;--------------------------------------------------------------------------------
+; Gravity Ring
+;--------------------------------------------------------------------------------
+
+org $078199
+JSL FallFromLedge2
+
+org $0781A0
+JSL ResetZCoordinates : NOP #2
+
+org $07BCE7
+JSL FallIntoHole : NOP #4
+
+org $07C722
+JSL FallIntoHole : NOP #4
+
+org $07C961
+;JSL FallIntoWater
+
+org $07CC67
+JSL FallFromLedge
+
+org $07C156
+JML JumpLedge : NOP #2
+JumpLedge.ReturnPoint:
+
+org $07C172
+JumpLedge.BranchAlpha:
+
+;================================================================================

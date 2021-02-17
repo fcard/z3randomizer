@@ -123,7 +123,7 @@ RTL
 !UpdateMenuRingGraphics = $7FFFFC
 !BombDamage = $7FFFFB
 !FireDamage = $7FFFFA
-!SpikeDamage = $7FFFF9
+;!SpikeDamage = $7FFFF9
 ;!GarnishFire = $7FFFF8
 
 ; Ring Flags
@@ -187,8 +187,9 @@ RTL
 
 ExtraMenuNMIUpdate:
     SEP #$20
-    LDA $4212 : AND #%00000001 : BNE ExtraMenuNMIUpdate
-    LDA $4218 : AND #$10 : STA !RButtonHeld
+    LDA !WhichMenu : BNE +
+        JSL HandleJumping
+    +
 
     LDA.b #$80 : STA $2115
 
@@ -444,7 +445,7 @@ DrawLowerItemBox:
     JSL DrawAbilityText
     LDA.l RingsEnabled : BEQ +
         JSR DecompExtraMenuGfx
-        LDA !RButtonHeld : BEQ +
+        LDA $F2 : AND $10 : BEQ +
         JSR DrawRingBox
         JSR DrawRingIcons
         RTL
@@ -546,7 +547,7 @@ RTS
 ; Handling Menu Input
 
 HandleRingMenuToggle:
-    LDA !RButtonHeld : BEQ .RNotHeld
+    LDA $F2 : AND #$10 : BEQ .RNotHeld
         LDA !WhichMenu : CMP #01 : BNE .afterRingMenu
             JSR DrawRingBox
             JSR DrawRingIcons
@@ -643,6 +644,266 @@ DoPitDamage:
         LDA.b #$00 : STA $7EF36D
     .notDead
 RTL
+
+; Gravity Ring Jump
+
+!JumpInverseDirection = $7C
+!JumpForwardDirection = $7D
+!JumpNonStartingDirections = $7E
+!JumpDirectionType = $7F
+!JumpAccelY = $80
+!JumpAccelX = $81
+!IsJumping = $82
+!JumpTimer = $83
+
+!JumpDistance = $30
+!JumpDistanceDash = $60
+!JumpDistanceDiagonal = $28
+
+HandleJumping:
+    JSL CheckJumpButtonPress
+    JSL ExecuteJump
+RTL
+
+StopJump:
+    STZ !IsJumping
+
+FallIntoHole:
+    LDA !IsJumping : BNE +
+        LDA #$01 : STA $5B : STA $5D
+    +
+RTL
+
+FallIntoWater:
+    LDA !IsJumping : BNE +
+        LDA #$04 : STA $5D
+    +
+RTL
+
+ResetZCoordinates:
+    LDA !IsJumping : BNE +
+        LDA #$FF : STA $24 : STA $25
+    +
+RTL
+
+JumpLedge:
+    LDA $4D : CMP #$01 : BNE +
+        JML JumpLedge.BranchAlpha
+    +
+    LDA !IsJumping : BEQ +
+        JML JumpLedge.BranchAlpha
+    +
+JML JumpLedge.ReturnPoint
+
+FallFromLedge:
+    LDA !IsJumping : BNE +
+        LDA #$06 : STA $5D
+    +
+RTL
+
+FallFromLedge2:
+    LDA !IsJumping : BNE +
+        LDA #$02 : STA $5D
+    +
+RTL
+
+CheckJumpButtonPress:
+    LDA !GravityRingFlag : BNE .hasGravityRing
+        RTL
+    .hasGravityRing
+
+    LDA $F6 : AND #$10 : BNE .pressingR
+        RTL
+    .pressingR
+
+    LDA $46 : BEQ .canMove ; stun countdown different than 0
+        RTL
+    .canMove
+
+    LDA $5D : BEQ .canJump ; normal state = can jump
+    CMP #$11 : BEQ .canJump ; dashing = can jump
+    CMP #01 : BNE .cannotMove         ; all other states other than being
+    LDA $5B : CMP #02 : BCC .canJump  ; close to a hole means we can't jump
+    .cannotMove
+        RTL
+    .canJump
+    LDA $5E : CMP #$10 : BNE .notDashing
+        PHX : PHB : PHK : PLB
+        SEP #$10
+        LDA $26 : ASL : ASL : TAX
+        BRA .loadValues
+    .notDashing
+        PHX : PHB : PHK : PLB
+        SEP #$10
+        LDA $F0 : ASL : ASL : TAX
+    .loadValues
+        LDA .distances+0, X : AND #$0F : STA !JumpNonStartingDirections
+        LDA .distances+0, X : LSR #$04 : STA !JumpDirectionType
+        LDA .distances+1, X : AND #$0F : STA !JumpForwardDirection
+        LDA .distances+1, X : LSR #$04 : STA !JumpInverseDirection
+        LDA .distances+2, X : STA $27
+        LDA .distances+3, X : STA $28
+
+        ; increase jump speed/distance by 50% if we're dashing
+        LDA $5E : CMP #$10 : BNE +
+            JSL Player_HaltDashAttackLong
+            LDA $27 : BEQ .x
+            BPL .positiveY
+            ;.negativeY
+                LDA #-!JumpDistanceDash : STA $27
+                BRA .x
+            .positiveY
+                LDA #!JumpDistanceDash : STA $27
+
+            .x
+            LDA $28 : BEQ +
+            BPL .positiveX
+            ;.negativeX
+                LDA #-!JumpDistanceDash : STA $28
+                BRA +
+            .positiveX
+                LDA #!JumpDistanceDash : STA $28
+        +
+
+        STZ $5E ; reset link's speed
+        STZ $5B ; reset link's state
+        STZ $5D ; reset link's state
+        LDA #$00 : STA !JumpAccelY
+        LDA #$00 : STA !JumpAccelX
+        LDA #$01 : STA !IsJumping
+        LDA #$20 : STA $46
+        LDA #$00 : STA !JumpTimer
+        REP #$10
+        PLB : PLX
+RTL
+    .distances
+        ; 1.a. direction type (0=no movement, 1=horizontal, 2=vertical, 3=both)
+        ; 2.b. non-starting directions
+        ; 2.a. forward direction,
+        ; 2.b. inverse direction,
+        ; 3. vertical speed
+        ; 4. horizontal speed
+        db $0F, $00, $00, $00 ; no direction pressed
+        db $1C, $21, $00, !JumpDistance ; right
+        db $1C, $12, $00, -!JumpDistance ; left
+        db $1C, $21, $00, !JumpDistance ; left/right
+        db $23, $84, !JumpDistance, $00 ; down
+        db $30, $A5, !JumpDistanceDiagonal, !JumpDistanceDiagonal ; down/right
+        db $30, $96, !JumpDistanceDiagonal, -!JumpDistanceDiagonal ; down/left
+        db $30, $A5, !JumpDistanceDiagonal, !JumpDistanceDiagonal ; down/left/right
+        db $23, $48, -!JumpDistance, $00 ; up pressed
+        db $30, $69, -!JumpDistanceDiagonal, !JumpDistanceDiagonal ; up/right
+        db $30, $5A, -!JumpDistanceDiagonal, -!JumpDistanceDiagonal ; up/left
+        db $30, $69, -!JumpDistanceDiagonal, !JumpDistanceDiagonal ; up/left/right
+        db $23, $84, !JumpDistance, $00 ; up/down pressed
+        db $30, $A5, !JumpDistanceDiagonal, !JumpDistanceDiagonal ; up/down/right
+        db $30, $96, !JumpDistanceDiagonal, -!JumpDistanceDiagonal ; up/down/left
+        db $30, $A5, !JumpDistanceDiagonal, !JumpDistanceDiagonal ; up/down/left/right
+
+ExecuteJump:
+    PHX
+    SEP #$10
+    LDA !IsJumping : BNE .dontSkipJump
+        REP #$10
+        PLX
+        RTL
+    .dontSkipJump
+        ; End jump state once timer reaches its end
+            LDA !JumpTimer : CMP #$20 : BCC .dontEndJump
+                STZ !IsJumping
+                STZ $46
+                STZ $24
+            .dontEndJump
+            INC !JumpTimer
+
+        ; Set Z coordinate
+           PHB : PHK : PLB
+           LDX !JumpTimer
+           LDA .z_coord, X : STA $24
+           PLB
+
+        ; Jump acceleration on non-starting directions
+            LDA $46 : CMP #$10 : BCC .cannotAccelerate
+            LDX #00
+            LDA !JumpAccelY : BEQ .noYAccel
+                INX
+            .noYAccel
+            LDA !JumpAccelX : BEQ .noXAccel
+                INX
+                INX
+            .noXAccel
+
+            LDA $F0 : AND !JumpNonStartingDirections : BEQ +
+                LDA !JumpDirectionType : AND #02 : BNE ++
+                    TXA : AND #01 : BNE ++
+                    LDA $F0 : AND #$04 : BEQ +++
+                        LDA #$10 : STA !JumpAccelY
+                        LDA #$10 : STA $27
+                        LDA !JumpForwardDirection : ORA #$04 : STA !JumpForwardDirection
+                        BRA ++
+                    +++
+                    LDA $F0 : AND #$08 : BEQ +++
+                        LDA #-$10 : STA !JumpAccelY
+                        LDA #-$10 : STA $27
+                        LDA !JumpForwardDirection : ORA #$08 : STA !JumpForwardDirection
+                    +++
+                ++
+                LDA !JumpDirectionType : AND #01 : BNE ++
+                    TXA : AND #02 : BNE ++
+                    LDA $F0 : AND #$01 : BEQ +++
+                        LDA #$10 : STA !JumpAccelX
+                        LDA #$10 : STA $28
+                        LDA !JumpForwardDirection : ORA #$01 : STA !JumpForwardDirection
+                        BRA ++
+                    +++
+                    LDA $F0 : AND #$02 : BEQ +++
+                        LDA #-$10 : STA !JumpAccelX
+                        LDA #-$10 : STA $28
+                        LDA !JumpForwardDirection : ORA #$02 : STA !JumpForwardDirection
+                    +++
+                ++
+            +
+            .cannotAccelerate
+
+        ; Calculate jump decceleration depending on current input
+            LDX #$02
+            LDA $F0 : AND !JumpInverseDirection : BEQ +
+                INX
+                INX
+            +
+            LDA $F0 : AND !JumpForwardDirection : BEQ +
+                DEX
+            +
+            STX $00
+
+        ;.verticalMovement
+            LDA !JumpDirectionType : AND #02 : BEQ .horizontalMovement
+            LDA $27
+            BEQ .horizontalMovement
+            BPL .verticalPositive
+            ;.verticalNegative
+                LDA $27 : CLC : ADC $00 : STA $27
+                BRA .horizontalMovement
+            .verticalPositive
+                LDA $27 : SEC : SBC $00 : STA $27
+        .horizontalMovement
+            LDA !JumpDirectionType : AND #01 : BEQ .done
+            LDA $28
+            BEQ .done
+            BPL .horizontalPositive
+            ;.horizontalNegative
+                LDA $28 : CLC : ADC $00 : STA $28
+                BRA .done
+            .horizontalPositive
+                LDA $28 : SEC : SBC $00 : STA $28
+    .done
+    REP #$10
+    PLX
+RTL
+  .z_coord
+      db $02, $04, $06, $07, $09, $0A, $0B, $0C, $0D, $0E, $0F, $10, $10, $11, $11, $11
+      db $11, $11, $11, $10, $10, $0F, $0E, $0D, $0C, $0B, $0A, $09, $07, $06, $04, $02
+      db $00, $00, $00, $00, $00
 
 ; Guard/Fire Rings
 

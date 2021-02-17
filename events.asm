@@ -181,6 +181,7 @@ RTL
 OnLinkDamaged:
 	JSL.l FlipperKill
   JSL.l RingDamageReduction
+  JSL.l StopJump
   LDA $00 : BEQ .noDamage
 	    JSL.l OHKOTimer
       RTL
