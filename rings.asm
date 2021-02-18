@@ -668,6 +668,17 @@ RTL
 StopJump:
     STZ !IsJumping
 
+ChangePitGroupsInFloor:
+    PHA
+    LDA !IsJumping : BNE +
+        PLA
+        STA $04BA
+        STZ $BA
+        JML ChangePitGroupsInFloor.ReturnPoint
+    +
+    PLA
+JML ChangePitGroupsInFloor.EndPoint
+
 CheckSoldierOnSameLayer:
     LDA !IsJumping : BNE +
         LDA $46 : ORA $4D

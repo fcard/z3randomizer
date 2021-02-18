@@ -2780,6 +2780,12 @@ JSL AncillaExt_LoadMaxSpriteCount
 ; Gravity Ring
 ;--------------------------------------------------------------------------------
 
+org $01CC3A
+JML ChangePitGroupsInFloor : NOP
+ChangePitGroupsInFloor.ReturnPoint:
+org $01CC58
+ChangePitGroupsInFloor.EndPoint:
+
 org $06EB83
 JSL CheckSoldierOnSameLayer
 
