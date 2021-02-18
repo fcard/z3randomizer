@@ -907,7 +907,7 @@ RTL
 
 ; Guard/Fire Rings
 
-!DiminishingEffect = 0 ; Guard Ring effect goes down with armor upgrades (0:no, 1:yes)
+!GuardRingDiminishingEffect = 0 ; Guard Ring effect goes down with armor upgrades (0:no, 1:yes)
 !MinimumDamage = 01 ; Minimum damage after ring damage reduction
 
 macro BranchIfGreaterOrEqual(minimum, address)
@@ -935,7 +935,7 @@ endmacro
 
 
 macro DamageReduction(address, value, endpoint)
-    if !DiminishingEffect != 0
+    if !GuardRingDiminishingEffect != 0
         LDA $7EF35B : BEQ ?greenMail ; Check current mail
             CMP #$01 : BNE ?redMail
             ;?blueMail:
