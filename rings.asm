@@ -745,6 +745,20 @@ FallFromLedge2:
     +
 RTL
 
+macro PlayTileSound(sound)
+    LDA !IsJumping : BNE +
+    LDA $4D : BNE +
+        LDA <sound> : JSL Player_DoSfx2Long
+    +
+    JML PlayTileSound.RTS
+endmacro
+
+PlayGrassSound:
+    %PlayTileSound(#$1A)
+
+PlayWaterSound:
+    %PlayTileSound(#$1C)
+
 CheckIfSmallShadow:
     LDA !IsJumping : BNE +
     LDA $4D : BNE +

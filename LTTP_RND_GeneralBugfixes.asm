@@ -199,6 +199,7 @@ incsrc servicerequest.asm
 incsrc elder.asm
 incsrc toast.asm
 incsrc darkroomitems.asm
+incsrc player_sfx_long.asm
 incsrc rings.asm
 incsrc ancilla_extended.asm
 warnpc $A58000

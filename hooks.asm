@@ -2829,6 +2829,15 @@ JumpLedge.ReturnPoint:
 org $07C172
 JumpLedge.BranchAlpha:
 
+org $07D159
+JML PlayGrassSound
+
+org $07D1A6
+JML PlayWaterSound
+
+org $07D2AE
+PlayTileSound.RTS:
+
 org $0DA89B
 JML CheckIfSmallShadow
 CheckIfSmallShadow.Yes:
