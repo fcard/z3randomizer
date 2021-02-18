@@ -125,6 +125,7 @@ RTL
 !FireDamage = $7FFFFA
 ;!SpikeDamage = $7FFFF9
 ;!GarnishFire = $7FFFF8
+!IsAboveWater = $7FFFF7
 
 ; Ring Flags
 !RupeeRingFlag = $7F6600
@@ -667,6 +668,7 @@ RTL
 
 StopJump:
     STZ !IsJumping
+RTL
 
 ChangePitGroupsInFloor:
     PHA
@@ -700,11 +702,21 @@ FallIntoHole:
     +
 RTL
 
-FallIntoWater:
+macro CheckJumpingAboveWater(fall_into_water, jump_above_water)
     LDA !IsJumping : BNE +
-        LDA #$04 : STA $5D
+    LDA $4D : BNE +
+        JML <fall_into_water>
     +
-RTL
+    JML <jump_above_water>
+endmacro
+
+CheckJumpingAboveWaterH:
+    %CheckJumpingAboveWater(CheckJumpingAboveWaterH.FallIntoWater,\
+                            CheckJumpingAboveWaterH.JumpAboveWater)
+
+CheckJumpingAboveWaterV:
+    %CheckJumpingAboveWater(CheckJumpingAboveWaterV.FallIntoWater,\
+                            CheckJumpingAboveWaterV.JumpAboveWater)
 
 ResetZCoordinates:
     LDA !IsJumping : BNE +
@@ -732,6 +744,14 @@ FallFromLedge2:
         LDA #$02 : STA $5D
     +
 RTL
+
+CheckIfSmallShadow:
+    LDA !IsJumping : BNE +
+    LDA $4D : BNE +
+        JML CheckIfSmallShadow.No
+    +
+    LDA $4D
+JML CheckIfSmallShadow.Yes
 
 CheckJumpButtonPress:
     LDA !GravityRingFlag : BNE .hasGravityRing

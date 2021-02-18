@@ -2790,7 +2790,7 @@ org $06EB83
 JSL CheckSoldierOnSameLayer
 
 org $06F6A0
-JSL ResetHeightOnRecoil
+;JSL ResetHeightOnRecoil
 
 org $078199
 JSL FallFromLedge2
@@ -2804,6 +2804,18 @@ JSL FallIntoHole : NOP #4
 org $07C722
 JSL FallIntoHole : NOP #4
 
+org $07BEF8
+JML CheckJumpingAboveWaterV
+CheckJumpingAboveWaterV.FallIntoWater:
+org $07BF4D
+CheckJumpingAboveWaterV.JumpAboveWater:
+
+org $07C92F
+JML CheckJumpingAboveWaterH
+CheckJumpingAboveWaterH.FallIntoWater:
+org $07C984
+CheckJumpingAboveWaterH.JumpAboveWater:
+
 org $07C961
 ;JSL FallIntoWater
 
@@ -2816,5 +2828,11 @@ JumpLedge.ReturnPoint:
 
 org $07C172
 JumpLedge.BranchAlpha:
+
+org $0DA89B
+JML CheckIfSmallShadow
+CheckIfSmallShadow.Yes:
+org $0DA8A9
+CheckIfSmallShadow.No:
 
 ;================================================================================
