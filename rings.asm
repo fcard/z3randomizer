@@ -668,6 +668,21 @@ RTL
 StopJump:
     STZ !IsJumping
 
+CheckSoldierOnSameLayer:
+    LDA !IsJumping : BNE +
+        LDA $46 : ORA $4D
+        RTL
+    +
+    LDA #$00
+RTL
+
+ResetHeightOnRecoil:
+    LDA !IsJumping : BNE +
+        STZ $24
+        STZ $25
+    +
+RTL
+
 FallIntoHole:
     LDA !IsJumping : BNE +
         LDA #$01 : STA $5B : STA $5D
