@@ -765,6 +765,16 @@ CheckJumpButtonPress:
                 LDA #!JumpDistanceDash : STA $28
         +
 
+        ; Update Link's sprite when it's stationary
+        LDA $2E
+        BEQ .stationarySprite
+        CMP #$01 : BEQ .stationarySprite
+        CMP #$05 : BEQ .stationarySprite
+            BRA .dontChangeSprite
+        .stationarySprite
+            LDA #$03 : STA $2E
+        .dontChangeSprite
+
         STZ $5E ; reset link's speed
         STZ $5B ; reset link's state
         STZ $5D ; reset link's state
