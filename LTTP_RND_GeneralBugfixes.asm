@@ -87,7 +87,7 @@ db #$20, #$19, #$08, #$31 ; year/month/day
 ;!REG_MUSIC_CONTROL = $012C
 !REG_MUSIC_CONTROL_REQUEST = $012C
 
-!CompressMenuRingsGFX = 0
+!CompressMenuRingsGFX = 1
 
 ;================================================================================
 
@@ -287,7 +287,6 @@ warnpc $31F400
 
 org $31F400
 GFX_RingsOverworld:
-;incbin newitems.gfx
 incbin rings.gfx
 warnpc $320000
 
@@ -418,11 +417,12 @@ db GFX_HUD_Main>>8
 org $00D25B ; 0x525B - HUD Main L
 db GFX_HUD_Main
 
-org $C08000 ; Rings H
+; old ancilla tables, use for new sprite sheets
+org $088380 ; Rings H
 db GFX_RingsOverworld>>16
-org $C08040 ; Rings M
+org $0883A0 ; Rings M
 db GFX_RingsOverworld>>8
-org $C08080 ; Rings L
+org $0883C0 ; Rings L
 db GFX_RingsOverworld
 ;================================================================================
 org $008781

@@ -101,11 +101,11 @@ RTL
 DecompExtra:
     CPY.b #$6C : !BLT +
         PHB
-        LDA #$C0 : PHA : PLB
+        LDA #$08 : PHA : PLB
         TYA : SBC #$6C : TAY
-        LDA $8000, Y : STA $0000CA
-        LDA $8040, Y : STA $0000C9
-        LDA $8080, Y : STA $0000C8
+        LDA $8380, Y : STA $0000CA
+        LDA $83A0, Y : STA $0000C9
+        LDA $83C0, Y : STA $0000C8
         PLB
         RTL
     +

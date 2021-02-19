@@ -567,6 +567,7 @@ NoEquip:
     JSR HandleRingMenuToggle
 
     LDA $F4 : BEQ .noButtonPress
+        LDA #$00 : STA !WhichMenu
         LDA.b #$05 : STA $0200
         RTL
     .noButtonPress
@@ -576,6 +577,8 @@ RTL
 MenuLoop:
     JSR HandleRingMenuToggle
     INC $0207
+
+    ; Handle menu closing
     LDA $F0 : BEQ ++
         PHA : LDA $F4 : AND.b #$10 : BEQ +
             LDA #$00 : STA !WhichMenu
