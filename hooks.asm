@@ -2790,7 +2790,7 @@ org $06EB83
 JSL CheckSoldierOnSameLayer
 
 org $06F6A0
-;JSL ResetHeightOnRecoil
+JSL ResetHeightOnRecoil
 
 org $078199
 JSL FallFromLedge2

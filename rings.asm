@@ -947,7 +947,13 @@ ExecuteJump:
                 STZ $27
                 STZ $28
                 if !AllowSkipJump == 0
-                    LDA !JumpingAboveWater : STA $0351
+                    LDA !JumpingAboveWater : BEQ +
+                        ; A is 1
+                        ; act as if we just bonked on a wall
+                        STA $0351
+                        STA $4D
+                        STA $46
+                    +
                 endif
             .dontEndJump
             INC !JumpTimer
