@@ -244,9 +244,9 @@ GetSpritePalette:
 RTL
 	.specialHandling
 	CMP.b #$F7 : BNE ++ ; Progressive Fire Ring
-      %GetRingPalette($7F6602, #$04, #$04)
+      %GetRingPalette($7F6602, #$02, #$02)
 	++ CMP.b #$F6 : BNE ++ ; Progressive Power Ring
-      %GetRingPalette($7F6604, #$04, #$04)
+      %GetRingPalette($7F6604, #$08, #$08)
 	++ CMP.b #$F5 : BNE ++ ; Progressive Guard Ring
       %GetRingPalette($7F6605, #$04, #$04)
 	++ CMP.b #$FD : BNE ++ ; Progressive Sword
@@ -339,12 +339,12 @@ RTL
 	;db $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08 ; *EVENT*
 	db $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08 ; Free Big Key
 	db $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08 ; Free Small Key
-	db $02 ; Rupee Ring
-  db $02 ; Gravity Ring
-  db $01, $01 ; Fire/Flame Ring
-  db $04 ; Light Ring
-  db $04, $04 ; Power/Sword Ring
-  db $02, $02 ; Guard/Diamond Ring
+	db $04 ; Rupee Ring
+  db $04 ; Gravity Ring
+  db $02, $02 ; Fire/Flame Ring
+  db $08 ; Light Ring
+  db $08, $08 ; Power/Sword Ring
+  db $04, $04 ; Guard/Diamond Ring
   db $F7 ; Progressive Fire Ring
   db $F6 ; Progressive Power Ring
   db $F5 ; Progressive Guard Ring
