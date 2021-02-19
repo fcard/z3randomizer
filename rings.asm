@@ -802,7 +802,7 @@ CheckIfSmallShadow:
     LDA $4D
 JML CheckIfSmallShadow.Yes
 
-AddExtendedXYSwordToOam:
+AddExtendedSwordXYToOam:
     LDA $24 : CMP #$FFFF : BEQ +
         SEP #$20
         LDA $0A : STA $0800, X

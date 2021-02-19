@@ -2862,6 +2862,6 @@ org $0DA8A9
 CheckIfSmallShadow.No:
 
 org $0DAD5F
-JSL AddExtendedXYSwordToOam : NOP
+JSL AddExtendedSwordXYToOam : NOP
 
 ;================================================================================
