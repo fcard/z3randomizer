@@ -2829,6 +2829,18 @@ JumpLedge.ReturnPoint:
 org $07C172
 JumpLedge.BranchAlpha:
 
+org $07D14F
+JSL SetGrassEffect : NOP
+
+org $07D16C
+JSL SetWaterEffect : NOP
+
+org $07D1C2
+JSL SetWaterEffect : NOP
+
+org $07D1E5
+JSL RemoveWaterEffect : NOP #2
+
 org $07D159
 JML PlayGrassSound
 
@@ -2838,10 +2850,18 @@ JML PlayWaterSound
 org $07D2AE
 PlayTileSound.RTS:
 
+org $08D697
+JML SetYCoordinateForSwingSparkle
+org $08D6A1
+SetYCoordinateForSwingSparkle.ReturnPoint:
+
 org $0DA89B
 JML CheckIfSmallShadow
 CheckIfSmallShadow.Yes:
 org $0DA8A9
 CheckIfSmallShadow.No:
+
+org $0DAD5F
+JSL AddExtendedXYSwordToOam : NOP
 
 ;================================================================================

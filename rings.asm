@@ -125,7 +125,6 @@ RTL
 !FireDamage = $7FFFFA
 ;!SpikeDamage = $7FFFF9
 ;!GarnishFire = $7FFFF8
-!IsAboveWater = $7FFFF7
 
 ; Ring Flags
 !RupeeRingFlag = $7F6600
@@ -648,18 +647,29 @@ RTL
 
 ; Gravity Ring Jump
 
+; Settings
+
+!AllowSkipJump = 0 ; Link will jump again when hitting deep water (1=Yes, 0=No)
+!AllowBunnyJump = 1 ; Bunny Link can jump with gravity ring (1=Yes, 0=No)
+
+; Addresses
+
 !JumpInverseDirection = $7C
 !JumpForwardDirection = $7D
 !JumpNonStartingDirections = $7E
 !JumpDirectionType = $7F
-!JumpAccelY = $80
-!JumpAccelX = $81
-!IsJumping = $82
-!JumpTimer = $83
+!IsJumping = $80
+!JumpTimer = $81
+!JumpingAboveWater = $82
+!JumpState = $83
+
+; Constants
 
 !JumpDistance = $30
 !JumpDistanceDash = $60
 !JumpDistanceDiagonal = $28
+
+; Routines
 
 HandleJumping:
     JSL CheckJumpButtonPress
@@ -745,6 +755,26 @@ FallFromLedge2:
     +
 RTL
 
+macro SetTileEffect(value)
+    LDA !IsJumping : BNE +
+        LDA #<value> : STA $0351
+    +
+    RTL
+endmacro
+
+SetGrassEffect:
+    %SetTileEffect($02)
+
+SetWaterEffect:
+    LDA #$01 : STA !JumpingAboveWater
+    %SetTileEffect($01)
+
+RemoveWaterEffect:
+    LDA #$00 : STA !JumpingAboveWater
+    STZ $0351 ; thing we wrote over
+    LDA $02EE ; ^
+RTL
+
 macro PlayTileSound(sound)
     LDA !IsJumping : BNE +
     LDA $4D : BNE +
@@ -759,6 +789,11 @@ PlayGrassSound:
 PlayWaterSound:
     %PlayTileSound(#$1C)
 
+SetYCoordinateForSwingSparkle:
+    LDA $20 : CLC : SBC $24 : STA $0BFA, X
+    LDA $21 : SBC $25 : STA $0C0E, X
+JML SetYCoordinateForSwingSparkle.ReturnPoint
+
 CheckIfSmallShadow:
     LDA !IsJumping : BNE +
     LDA $4D : BNE +
@@ -766,6 +801,19 @@ CheckIfSmallShadow:
     +
     LDA $4D
 JML CheckIfSmallShadow.Yes
+
+AddExtendedXYSwordToOam:
+    LDA $24 : CMP #$FFFF : BEQ +
+        SEP #$20
+        LDA $0A : STA $0800, X
+        LDA $0B : SEC : SBC $24 : STA $0801, X
+        REP #$20
+        RTL
+    +
+    LDA $0A
+    STA $0800, X
+RTL
+
 
 CheckJumpButtonPress:
     LDA !GravityRingFlag : BNE .hasGravityRing
@@ -782,6 +830,12 @@ CheckJumpButtonPress:
 
     LDA $5D : BEQ .canJump ; normal state = can jump
     CMP #$11 : BEQ .canJump ; dashing = can jump
+
+    if !AllowBunnyJump != 0
+        CMP #$17 : BEQ .canJump ; permabunny = can jump
+        CMP #$1C : BEQ .canJump ; temporary bunny = can jump
+    endif
+
     CMP #01 : BNE .cannotMove         ; all other states other than being
     LDA $5B : CMP #02 : BCC .canJump  ; close to a hole means we can't jump
     .cannotMove
@@ -804,7 +858,9 @@ CheckJumpButtonPress:
         LDA .distances+2, X : STA $27
         LDA .distances+3, X : STA $28
 
-        ; increase jump speed/distance by 50% if we're dashing
+        STZ $0351 ; Remove water/grass effects
+
+        ; double jump speed/distance if we're dashing
         LDA $5E : CMP #$10 : BNE +
             JSL Player_HaltDashAttackLong
             LDA $27 : BEQ .x
@@ -835,11 +891,16 @@ CheckJumpButtonPress:
             LDA #$03 : STA $2E
         .dontChangeSprite
 
+        if !AllowBunnyJump != 0
+            LDA $5D : CMP #$12 : BCS .isBunny
+                STZ $5D
+            .isBunny
+        else
+            STZ $5D
+        endif
+
         STZ $5E ; reset link's speed
         STZ $5B ; reset link's state
-        STZ $5D ; reset link's state
-        LDA #$00 : STA !JumpAccelY
-        LDA #$00 : STA !JumpAccelX
         LDA #$01 : STA !IsJumping
         LDA #$20 : STA $46
         LDA #$00 : STA !JumpTimer
@@ -883,6 +944,11 @@ ExecuteJump:
                 STZ !IsJumping
                 STZ $46
                 STZ $24
+                STZ $27
+                STZ $28
+                if !AllowSkipJump == 0
+                    LDA !JumpingAboveWater : STA $0351
+                endif
             .dontEndJump
             INC !JumpTimer
 
@@ -894,42 +960,35 @@ ExecuteJump:
 
         ; Jump acceleration on non-starting directions
             LDA $46 : CMP #$10 : BCC .cannotAccelerate
-            LDX #00
-            LDA !JumpAccelY : BEQ .noYAccel
-                INX
-            .noYAccel
-            LDA !JumpAccelX : BEQ .noXAccel
-                INX
-                INX
-            .noXAccel
-
             LDA $F0 : AND !JumpNonStartingDirections : BEQ +
                 LDA !JumpDirectionType : AND #02 : BNE ++
-                    TXA : AND #01 : BNE ++
                     LDA $F0 : AND #$04 : BEQ +++
-                        LDA #$10 : STA !JumpAccelY
                         LDA #$10 : STA $27
                         LDA !JumpForwardDirection : ORA #$04 : STA !JumpForwardDirection
+                        LDA !JumpNonStartingDirections : AND #($0F-$0C)
+                        STA !JumpNonStartingDirections
                         BRA ++
                     +++
                     LDA $F0 : AND #$08 : BEQ +++
-                        LDA #-$10 : STA !JumpAccelY
                         LDA #-$10 : STA $27
                         LDA !JumpForwardDirection : ORA #$08 : STA !JumpForwardDirection
+                        LDA !JumpNonStartingDirections : AND #($0F-$0C)
+                        STA !JumpNonStartingDirections
                     +++
                 ++
                 LDA !JumpDirectionType : AND #01 : BNE ++
-                    TXA : AND #02 : BNE ++
                     LDA $F0 : AND #$01 : BEQ +++
-                        LDA #$10 : STA !JumpAccelX
                         LDA #$10 : STA $28
                         LDA !JumpForwardDirection : ORA #$01 : STA !JumpForwardDirection
+                        LDA !JumpNonStartingDirections : AND #($0F-$03)
+                        STA !JumpNonStartingDirections
                         BRA ++
                     +++
                     LDA $F0 : AND #$02 : BEQ +++
-                        LDA #-$10 : STA !JumpAccelX
                         LDA #-$10 : STA $28
                         LDA !JumpForwardDirection : ORA #$02 : STA !JumpForwardDirection
+                        LDA !JumpNonStartingDirections : AND #($0F-$03)
+                        STA !JumpNonStartingDirections
                     +++
                 ++
             +
