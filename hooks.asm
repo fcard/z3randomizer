@@ -2786,6 +2786,14 @@ ChangePitGroupsInFloor.ReturnPoint:
 org $01CC58
 ChangePitGroupsInFloor.EndPoint:
 
+org $07F4EE
+JML CacheStateForJump
+org $07F4F6
+CacheStateForJump.ReturnPoint:
+
+org $01FF28
+Player_CacheStatePriorToHandler:
+
 org $06EB83
 JSL CheckSoldierOnSameLayer
 

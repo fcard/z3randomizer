@@ -652,7 +652,6 @@ RTL
 
 ; Settings
 
-!AllowSkipJump = 0 ; Link will jump again when hitting deep water (1=Yes, 0=No)
 !AllowBunnyJump = 1 ; Bunny Link can jump with gravity ring (1=Yes, 0=No)
 
 ; Addresses
@@ -693,6 +692,13 @@ ChangePitGroupsInFloor:
     +
     PLA
 JML ChangePitGroupsInFloor.EndPoint
+
+CacheStateForJump:
+    LDA $1B : BNE +
+    LDA !IsJumping : BNE +
+        JSL Player_CacheStatePriorToHandler
+    +
+JML CacheStateForJump.ReturnPoint
 
 CheckSoldierOnSameLayer:
     LDA !IsJumping : BNE +
@@ -943,21 +949,22 @@ ExecuteJump:
         RTL
     .dontSkipJump
         ; End jump state once timer reaches its end
-            LDA !JumpTimer : CMP #$20 : BCC .dontEndJump
+            LDA !JumpTimer
+            CMP #$1F : BNE .notFrameBeforeEnd
+                LDA !JumpingAboveWater : BEQ +
+                    ; A is 1
+                    ; act as if we just bonked on a wall
+                    STA $0351
+                    STA $4D
+                +
+                BRA .dontEndJump
+            .notFrameBeforeEnd
+            CMP #$20 : BCC .dontEndJump
                 STZ !IsJumping
                 STZ $46
                 STZ $24
                 STZ $27
                 STZ $28
-                if !AllowSkipJump == 0
-                    LDA !JumpingAboveWater : BEQ +
-                        ; A is 1
-                        ; act as if we just bonked on a wall
-                        STA $0351
-                        STA $4D
-                        STA $46
-                    +
-                endif
             .dontEndJump
             INC !JumpTimer
 

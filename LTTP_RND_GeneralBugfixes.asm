@@ -417,7 +417,8 @@ db GFX_HUD_Main>>8
 org $00D25B ; 0x525B - HUD Main L
 db GFX_HUD_Main
 
-; old ancilla tables, use for new sprite sheets
+; old ancilla tables, moved to ancilla_extended.asm
+; use for new sprite sheets
 org $088380 ; Rings H
 db GFX_RingsOverworld>>16
 org $0883A0 ; Rings M
