@@ -187,9 +187,14 @@ RTL
 
 ExtraMenuNMIUpdate:
     SEP #$20
-    LDA !WhichMenu : BNE +
+
+    LDA $10
+    CMP #$07 : BEQ .handleJumping
+    CMP #$09 : BEQ .handleJumping
+        BRA .afterJumping
+    .handleJumping
         JSL HandleJumping
-    +
+    .afterJumping
 
     LDA.b #$80 : STA $2115
 
