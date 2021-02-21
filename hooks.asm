@@ -2780,6 +2780,13 @@ JSL AncillaExt_LoadMaxSpriteCount
 ; Gravity Ring
 ;--------------------------------------------------------------------------------
 
+org $01C57E
+JML ChangeTrapDoorState : NOP #2
+org $01C584
+ChangeTrapDoorState.ReturnPoint:
+org $01C596
+ChangeTrapDoorState.EndPoint:
+
 org $01CC3A
 JML ChangePitGroupsInFloor : NOP
 ChangePitGroupsInFloor.ReturnPoint:
@@ -2810,6 +2817,9 @@ org $07BCE7
 JSL FallIntoHole : NOP #4
 
 org $07C722
+JSL FallIntoHole : NOP #4
+
+org $07BEC5
 JSL FallIntoHole : NOP #4
 
 org $07BEF8

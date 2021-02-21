@@ -689,6 +689,14 @@ StopJump:
     STZ !IsJumping
 RTL
 
+ChangeTrapDoorState:
+    LDA !IsJumping : AND #$00FF : BNE +
+        STX $0468
+        STZ $068E
+        JML ChangeTrapDoorState.ReturnPoint
+    +
+JML ChangeTrapDoorState.EndPoint
+
 ChangePitGroupsInFloor:
     PHA
     LDA !IsJumping : BNE +
