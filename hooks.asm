@@ -2823,10 +2823,13 @@ CheckYPress.No:
 org $07BCE7
 JSL FallIntoHole : NOP #4
 
+org $07BEC5
+JSL FallIntoHole : NOP #4
+
 org $07C722
 JSL FallIntoHole : NOP #4
 
-org $07BEC5
+org $07C8FC
 JSL FallIntoHole : NOP #4
 
 org $07BEF8
