@@ -2844,7 +2844,7 @@ org $07D16C
 JSL SetWaterEffect : NOP
 
 org $07D1C2
-JSL SetWaterEffect : NOP
+JSL SetWaterEffect2 : NOP
 
 org $07D1E5
 JSL RemoveWaterEffect : NOP #2

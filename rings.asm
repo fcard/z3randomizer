@@ -193,7 +193,9 @@ ExtraMenuNMIUpdate:
     CMP #$09 : BEQ .handleJumping
         BRA .afterJumping
     .handleJumping
+        SEP #$10
         JSL HandleJumping
+        REP #$10
     .afterJumping
 
     LDA.b #$80 : STA $2115
@@ -780,6 +782,9 @@ SetGrassEffect:
     %SetTileEffect($02)
 
 SetWaterEffect:
+    %SetTileEffect($01)
+
+SetWaterEffect2:
     LDA #$01 : STA !JumpingAboveWater
     %SetTileEffect($01)
 
@@ -857,12 +862,10 @@ CheckJumpButtonPress:
     .canJump
     LDA $5E : CMP #$10 : BNE .notDashing
         PHX : PHB : PHK : PLB
-        SEP #$10
         LDA $26 : ASL : ASL : TAX
         BRA .loadValues
     .notDashing
         PHX : PHB : PHK : PLB
-        SEP #$10
         LDA $F0 : ASL : ASL : TAX
     .loadValues
         LDA .distances+0, X : AND #$0F : STA !JumpNonStartingDirections
@@ -918,7 +921,6 @@ CheckJumpButtonPress:
         LDA #$01 : STA !IsJumping
         LDA #$20 : STA $46
         LDA #$00 : STA !JumpTimer
-        REP #$10
         PLB : PLX
 RTL
     .distances
@@ -947,9 +949,7 @@ RTL
 
 ExecuteJump:
     PHX
-    SEP #$10
     LDA !IsJumping : BNE .dontSkipJump
-        REP #$10
         PLX
         RTL
     .dontSkipJump
@@ -1047,7 +1047,6 @@ ExecuteJump:
             .horizontalPositive
                 LDA $28 : SEC : SBC $00 : STA $28
     .done
-    REP #$10
     PLX
 RTL
   .z_coord
