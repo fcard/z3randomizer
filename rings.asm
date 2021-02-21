@@ -758,6 +758,13 @@ ResetZCoordinates:
     +
 RTL
 
+CheckYPress:
+    LDA !IsJumping : BNE +
+    LDA $46 : BEQ +
+        JML CheckYPress.No
+    +
+JML CheckYPress.Continue
+
 JumpLedge:
     LDA $4D : CMP #$01 : BNE +
         JML JumpLedge.BranchAlpha

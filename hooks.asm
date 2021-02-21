@@ -2813,6 +2813,13 @@ JSL FallFromLedge2
 org $0781A0
 JSL ResetZCoordinates : NOP #2
 
+org $07B060
+JML CheckYPress
+org $07B064
+CheckYPress.Continue:
+org $07B06E
+CheckYPress.No:
+
 org $07BCE7
 JSL FallIntoHole : NOP #4
 
