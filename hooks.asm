@@ -2878,6 +2878,15 @@ JML PlayWaterSound
 org $07D2AE
 PlayTileSound.RTS:
 
+org $08BF03
+JML FixHookshotY : NOP
+FixHookshotY.ReturnPoint:
+org $08BF0C
+FixHookshotY.BranchPoint:
+
+org $08F7F0
+JSL FixHookshotY2 : NOP #2
+
 org $08D697
 JML SetYCoordinateForSwingSparkle
 org $08D6A1

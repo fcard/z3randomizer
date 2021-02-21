@@ -660,6 +660,7 @@ RTL
 ; Settings
 
 !AllowBunnyJump = 1 ; Bunny Link can jump with gravity ring (1=Yes, 0=No)
+!AllowHookshotWaterJump = 0 ; Allow using hookshot while jumping above water (1=Yes, 0=No)
 
 ; Addresses
 
@@ -759,7 +760,26 @@ ResetZCoordinates:
 RTL
 
 CheckYPress:
+    LDA $0303
+    CMP #$02 : BEQ .boomerang ; cannot jump above water if boomerang (about to hit water)
+    if !AllowHookshotWaterJump != 0
+        CMP #$0F : BCC .canJumpAndUse ; or medallions
+        CMP #$12 : BCC .canJumpAndUse
+    else
+        CMP #$0E : BCC .canJumpAndUse ; hookshot
+        CMP #$12 : BCS .canJumpAndUse ; or medallions
+    endif
+    LDA !JumpingAboveWater : BNE .cannotJumpAndUse
+    BRA .canJumpAndUse
+
+    .boomerang
+    LDA !JumpingAboveWater : BEQ .canJumpAndUse
+    LDA !JumpTimer : CMP #$18 : BCS .cannotJumpAndUse
+
+    .canJumpAndUse
     LDA !IsJumping : BNE +
+
+    .cannotJumpAndUse
     LDA $46 : BEQ +
         JML CheckYPress.No
     +
@@ -822,6 +842,27 @@ PlayGrassSound:
 
 PlayWaterSound:
     %PlayTileSound(#$1C)
+
+FixHookshotY:
+    LDA $24 : CMP #$FF : BEQ .doneWithZ
+        LDA $00 : SEC : SBC $24 : STA $00
+    .doneWithZ
+    LDA $0385, X : BEQ +
+        JML FixHookshotY.ReturnPoint
+    +
+JML FixHookshotY.BranchPoint
+
+FixHookshotY2:
+    LDA $24 : CMP #$FFFF : BNE .hasZ
+        LDA $00
+        BRA .done
+    .hasZ
+        LDA $00
+        CLC : ADC $24
+    .done
+    CLC : ADC #$0004
+    STA $72
+RTL
 
 SetYCoordinateForSwingSparkle:
     LDA $20 : CLC : SBC $24 : STA $0BFA, X
