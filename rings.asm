@@ -839,6 +839,7 @@ SetGrassEffect:
     %SetTileEffect($02)
 
 SetWaterEffect:
+    LDA #$00 : STA !JumpingAboveWater
     %SetTileEffect($01)
 
 SetWaterEffect2:
