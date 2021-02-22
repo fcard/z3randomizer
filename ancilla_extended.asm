@@ -207,6 +207,15 @@ AncillaExt_LoadMaxSpriteCount:
     PLB
 RTL
 
+Ancilla_SetCoordsLong:
+    LDA $00 : STA $0BFA, X
+    LDA $01 : STA $0C0E, X
+
+    LDA $02 : STA $0C04, X
+    LDA $03 : STA $0C18, X
+RTL
+
+; ==============================================================================
 function AncillaExt_CalculateHiOamIndex(index) = (index-4)>>2
 
 macro AncillaExt_CalculateHiOamIndex()

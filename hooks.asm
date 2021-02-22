@@ -2787,6 +2787,12 @@ ChangeTrapDoorState.ReturnPoint:
 org $01C596
 ChangeTrapDoorState.EndPoint:
 
+org $01C59B
+JML PressGroundSwitch : NOP
+PressGroundSwitch.ReturnPoint:
+org $01C5C4
+PressGroundSwitch.EndPoint:
+
 org $01CC3A
 JML ChangePitGroupsInFloor : NOP
 ChangePitGroupsInFloor.ReturnPoint:
@@ -2812,6 +2818,9 @@ JSL FallFromLedge2
 
 org $0781A0
 JSL ResetZCoordinates : NOP #2
+
+org $0781E6
+JSL ZeroCountersForStun : NOP #2
 
 org $07B060
 JML CheckYPress
@@ -2886,6 +2895,17 @@ FixHookshotY.BranchPoint:
 
 org $08F7F0
 JSL FixHookshotY2 : NOP #2
+
+org $08912C
+JML UpdateHeldBoomerangCoords
+UpdateHeldBoomerangCoords.ReturnPoint:
+org $089133
+UpdateHeldBoomerangCoords.JustDraw:
+
+org $08913C
+JML FixBoomerangY
+org $089148
+FixBoomerangY.ReturnPoint:
 
 org $08D697
 JML SetYCoordinateForSwingSparkle

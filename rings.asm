@@ -183,14 +183,22 @@ Mirror_InitHdmaSettingsAux:
     LDA.b #$C0 : STA $9B
 RTL
 
-; Hook into the NMI function to move Ring sprites to VRAM
+; Hook into the NMI function
+
+!AllowStairJump = 0 ; allow jumping on outdoor staircases (1=Yes, 0=No)
 
 ExtraMenuNMIUpdate:
     SEP #$20
 
+    if !AllowStairJump != 0
+        LDA $58 : BNE .skipStairCheck
+    endif
+    LDA $5E : CMP #$02 : BEQ .afterJumping ; don't jump when on stairs
+    .skipStairCheck
     LDA $10
     CMP #$07 : BEQ .handleJumping
     CMP #$09 : BEQ .handleJumping
+    CMP #$0B : BEQ .handleJumping
         BRA .afterJumping
     .handleJumping
         SEP #$10
@@ -698,6 +706,13 @@ ChangeTrapDoorState:
     +
 JML ChangeTrapDoorState.EndPoint
 
+PressGroundSwitch:
+    LDA !IsJumping : AND #$00FF : BNE +
+        LDA $0430 : BNE +
+        JML PressGroundSwitch.ReturnPoint
+    +
+JML PressGroundSwitch.EndPoint
+
 ChangePitGroupsInFloor:
     PHA
     LDA !IsJumping : BNE +
@@ -757,6 +772,13 @@ ResetZCoordinates:
     LDA !IsJumping : BNE +
         LDA #$FF : STA $24 : STA $25
     +
+RTL
+
+ZeroCountersForStun:
+    LDA !IsJumping : BNE +
+        STZ $030D
+    +
+    STZ $030E
 RTL
 
 CheckYPress:
@@ -863,6 +885,54 @@ FixHookshotY2:
     CLC : ADC #$0004
     STA $72
 RTL
+
+UpdateHeldBoomerangCoords:
+    PHB : PHK : PLB
+    REP #$20
+    LDY $2F
+    LDA $24 : CMP #$FFFF : BNE .hasZ
+        LDA $20
+        BRA .afterZ
+    .hasZ
+        LDA $20
+        SEC : SBC $24
+    .afterZ
+        CLC : ADC #$0008
+        CLC : ADC .typical_y_offsets, Y
+        STA $00
+
+    LDA $22 : CLC : ADC .typical_x_offsets, Y : STA $02
+    SEP #$20
+    PLB
+
+    JSL Ancilla_SetCoordsLong
+
+    LDA $4D : BNE +
+        JML UpdateHeldBoomerangCoords.JustDraw
+    +
+JML UpdateHeldBoomerangCoords.ReturnPoint
+
+.typical_y_offsets
+    dw -10,  -8,  -9,  -9, -10,  -8,  -9,  -9
+
+.typical_x_offsets
+    dw  -9,  11,   8,  -8, -10,  11,   8,  -8
+
+
+FixBoomerangY:
+    LDA $24 : CMP #$FFFF : BEQ .noZ
+        LDA $20
+        CLC : ADC #$0008
+        CLC : ADC $90DC, Y
+        SEC : SBC $24
+        STA $00
+        JML FixBoomerangY.ReturnPoint
+    .noZ
+        LDA $20
+        CLC : ADC #$0008
+        CLC : ADC $90DC, Y
+        STA $00
+JML FixBoomerangY.ReturnPoint
 
 SetYCoordinateForSwingSparkle:
     LDA $20 : CLC : SBC $24 : STA $0BFA, X
@@ -1026,8 +1096,11 @@ ExecuteJump:
                 STZ $24
                 STZ $27
                 STZ $28
+                PLX
+                RTL
             .dontEndJump
             INC !JumpTimer
+            LDA #01 : STA $46
 
         ; Set Z coordinate
            PHB : PHK : PLB
@@ -1036,7 +1109,7 @@ ExecuteJump:
            PLB
 
         ; Jump acceleration on non-starting directions
-            LDA $46 : CMP #$10 : BCC .cannotAccelerate
+            LDA !JumpTimer : CMP #$19 : BCS .cannotAccelerate
             LDA $F0 : AND !JumpNonStartingDirections : BEQ +
                 LDA !JumpDirectionType : AND #02 : BNE ++
                     LDA $F0 : AND #$04 : BEQ +++

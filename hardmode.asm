@@ -2,14 +2,14 @@
 ; Hard & Masochist Mode
 ;================================================================================
 !SpikeDamage = $7FFFF9
-!IsJumping = $82
+!IsJumping = $80
 
 CalculateSpikeFloorDamage:
+  LDA !IsJumping : BNE +
 		REP #$20 ; set 16-bit accumulator
 		LDA $A0 ; these are all decimal because i got them that way
 		CMP.w #279
 		SEP #$20 ; set 8-bit accumulator
-  LDA !IsJumping : BNE +
 		BNE ++
 			LDA.l ByrnaCaveSpikeDamage
 			STA $0373
