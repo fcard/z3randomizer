@@ -185,8 +185,6 @@ RTL
 
 ; Hook into the NMI function
 
-!AllowStairJump = 0 ; allow jumping on outdoor staircases (1=Yes, 0=No)
-
 ExtraMenuNMIUpdate:
     SEP #$20
 
@@ -199,6 +197,8 @@ ExtraMenuNMIUpdate:
     CMP #$07 : BEQ .handleJumping
     CMP #$09 : BEQ .handleJumping
     CMP #$0B : BEQ .handleJumping
+        STZ !IsJumping
+        STZ !JumpTimer
         BRA .afterJumping
     .handleJumping
         SEP #$10
@@ -665,30 +665,6 @@ RTL
 
 ; Gravity Ring Jump
 
-; Settings
-
-!AllowBunnyJump = 1 ; Bunny Link can jump with gravity ring (1=Yes, 0=No)
-!AllowHookshotWaterJump = 0 ; Allow using hookshot while jumping above water (1=Yes, 0=No)
-
-; Addresses
-
-!JumpInverseDirection = $7C
-!JumpForwardDirection = $7D
-!JumpNonStartingDirections = $7E
-!JumpDirectionType = $7F
-!IsJumping = $80
-!JumpTimer = $81
-!JumpingAboveWater = $82
-!JumpState = $83
-
-; Constants
-
-!JumpDistance = $30
-!JumpDistanceDash = $60
-!JumpDistanceDiagonal = $28
-
-; Routines
-
 HandleJumping:
     JSL CheckJumpButtonPress
     JSL ExecuteJump
@@ -969,22 +945,28 @@ RTL
 
 
 CheckJumpButtonPress:
-    LDA !GravityRingFlag : BNE .hasGravityRing
+    LDA $46 : BEQ .canMove ; stun countdown different than 0
         RTL
-    .hasGravityRing
+    .canMove
 
     LDA $F6 : AND #$10 : BNE .pressingR
         RTL
     .pressingR
 
-    LDA $46 : BEQ .canMove ; stun countdown different than 0
+    if !AllowBunnyJumpAlways != 0
+        LDA $5D
+        CMP #$17 : BEQ .canJump ; permabunny = can jump
+        CMP #$1C : BEQ .canJump ; temporary bunny = can jump
+    endif
+
+    LDA !GravityRingFlag : BNE .hasGravityRing
         RTL
-    .canMove
+    .hasGravityRing
 
     LDA $5D : BEQ .canJump ; normal state = can jump
     CMP #$11 : BEQ .canJump ; dashing = can jump
 
-    if !AllowBunnyJump != 0
+    if !AllowBunnyJumpWithRing != 0
         CMP #$17 : BEQ .canJump ; permabunny = can jump
         CMP #$1C : BEQ .canJump ; temporary bunny = can jump
     endif
@@ -1002,16 +984,16 @@ CheckJumpButtonPress:
         PHX : PHB : PHK : PLB
         LDA $F0 : ASL : ASL : TAX
     .loadValues
-        LDA .distances+0, X : AND #$0F : STA !JumpNonStartingDirections
-        LDA .distances+0, X : LSR #$04 : STA !JumpDirectionType
-        LDA .distances+1, X : AND #$0F : STA !JumpForwardDirection
-        LDA .distances+1, X : LSR #$04 : STA !JumpInverseDirection
-        LDA .distances+2, X : STA $27
-        LDA .distances+3, X : STA $28
+        LDA .values+0, X : AND #$0F : STA !JumpNonStartingDirections
+        LDA .values+0, X : LSR #$04 : STA !JumpDirectionType
+        LDA .values+1, X : AND #$0F : STA !JumpForwardDirection
+        LDA .values+1, X : LSR #$04 : STA !JumpInverseDirection
+        LDA .values+2, X : STA $27
+        LDA .values+3, X : STA $28
 
         STZ $0351 ; Remove water/grass effects
 
-        ; double jump speed/distance if we're dashing
+        ; use dash jump speed/distance if we're dashing
         LDA $5E : CMP #$10 : BNE +
             JSL Player_HaltDashAttackLong
             LDA $27 : BEQ .x
@@ -1033,7 +1015,7 @@ CheckJumpButtonPress:
         +
 
         ; Update Link's sprite when it's stationary
-        LDA $2E
+        LDA $2E ; Link's animation frame
         BEQ .stationarySprite
         CMP #$01 : BEQ .stationarySprite
         CMP #$05 : BEQ .stationarySprite
@@ -1042,7 +1024,20 @@ CheckJumpButtonPress:
             LDA #$03 : STA $2E
         .dontChangeSprite
 
-        if !AllowBunnyJump != 0
+        if !PushOutOfDoorway != 0
+            LDA $2F : BNE + ; if facing up
+            LDA $6C : CMP #$01 : BNE + ; if in a vertical doorway
+                REP #$20
+                DEC $20 ; Move three pixels up
+                DEC $20 ; ^
+                DEC $20 ; ^
+                SEP #$20
+                STZ $6C ; No longer in a doorway
+            +
+        endif
+
+
+        if !AllowBunnyJumpWithRing != 0 || !AllowBunnyJumpAlways != 0
             LDA $5D : CMP #$12 : BCS .isBunny
                 STZ $5D
             .isBunny
@@ -1057,9 +1052,9 @@ CheckJumpButtonPress:
         LDA #$00 : STA !JumpTimer
         PLB : PLX
 RTL
-    .distances
+    .values
         ; 1.a. direction type (0=no movement, 1=horizontal, 2=vertical, 3=both)
-        ; 2.b. non-starting directions
+        ; 1.b. non-starting directions
         ; 2.a. forward direction,
         ; 2.b. inverse direction,
         ; 3. vertical speed

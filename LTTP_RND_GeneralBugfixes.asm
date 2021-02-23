@@ -89,6 +89,8 @@ db #$20, #$19, #$08, #$31 ; year/month/day
 
 !CompressMenuRingsGFX = 1
 
+incsrc jump_defines.asm
+
 ;================================================================================
 
 incsrc hooks.asm

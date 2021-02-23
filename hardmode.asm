@@ -2,7 +2,6 @@
 ; Hard & Masochist Mode
 ;================================================================================
 !SpikeDamage = $7FFFF9
-!IsJumping = $80
 
 CalculateSpikeFloorDamage:
   LDA !IsJumping : BNE +
