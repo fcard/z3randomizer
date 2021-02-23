@@ -1095,7 +1095,6 @@ ExecuteJump:
             .notFrameBeforeEnd
             CMP #$20 : BCC .dontEndJump
                 STZ !IsJumping
-                STZ $46
                 STZ $24
                 STZ $27
                 STZ $28
