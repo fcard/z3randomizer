@@ -816,6 +816,13 @@ JumpLedge:
     +
 JML JumpLedge.ReturnPoint
 
+CheckDungeonWarpCollision:
+    LDA !IsJumping : BNE +
+    LDA $4D : BNE +
+        JML CheckDungeonWarpCollision.ReturnPoint
+    +
+JML CheckDungeonWarpCollision.BranchPoint
+
 FallFromLedge:
     LDA !IsJumping : BNE +
         LDA #$06 : STA $5D

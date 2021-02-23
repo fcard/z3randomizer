@@ -2866,6 +2866,12 @@ JumpLedge.ReturnPoint:
 org $07C172
 JumpLedge.BranchAlpha:
 
+org $07D114
+JML CheckDungeonWarpCollision
+CheckDungeonWarpCollision.ReturnPoint:
+org $07D142
+CheckDungeonWarpCollision.BranchPoint:
+
 org $07D14F
 JSL SetGrassEffect : NOP
 
