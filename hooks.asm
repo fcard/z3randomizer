@@ -2890,6 +2890,9 @@ JML PlayMireWaterSound
 org $07D1A6
 JML PlayWaterSound
 
+org $07D1D2
+JML PlayMireWaterSound
+
 org $07D2AE
 PlayTileSound.RTS:
 
