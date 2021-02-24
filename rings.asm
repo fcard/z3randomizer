@@ -1156,7 +1156,7 @@ ExecuteJump:
 
         ; Jump acceleration on non-starting directions
             LDA !JumpTimer : CMP #$19 : BCS .cannotAccelerate
-            LDA $F0 : %M_AND(!JumpNonStartingDirections) : BEQ +
+            LDA $F0 : AND !JumpNonStartingDirections : BEQ +
                 LDA !JumpDirectionType : AND #02 : BNE ++
                     LDA $F0 : AND #$04 : BEQ +++
                         LDA #$10 : STA $27
@@ -1192,11 +1192,11 @@ ExecuteJump:
 
         ; Calculate jump decceleration depending on current input
             LDX #$02
-            LDA $F0 : %M_AND(!JumpInverseDirection) : BEQ +
+            LDA $F0 : AND !JumpInverseDirection : BEQ +
                 INX
                 INX
             +
-            LDA $F0 : %M_AND(!JumpForwardDirection) : BEQ +
+            LDA $F0 : AND !JumpForwardDirection : BEQ +
                 DEX
             +
             STX $00
