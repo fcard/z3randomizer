@@ -89,6 +89,7 @@ db #$20, #$19, #$08, #$31 ; year/month/day
 
 !CompressMenuRingsGFX = 1
 
+incsrc multisize_ops.asm
 incsrc jump_defines.asm
 
 ;================================================================================

@@ -197,13 +197,15 @@ ExtraMenuNMIUpdate:
     CMP #$07 : BEQ .handleJumping
     CMP #$09 : BEQ .handleJumping
     CMP #$0B : BEQ .handleJumping
-        STZ !IsJumping
-        STZ !JumpTimer
+        %M_STZ(!IsJumping,0)
+        %M_STZ(!JumpTimer,0)
         BRA .afterJumping
     .handleJumping
+        PHX
         SEP #$10
         JSL HandleJumping
         REP #$10
+        PLX
     .afterJumping
 
     LDA.b #$80 : STA $2115
@@ -849,6 +851,25 @@ PlayGrassSound:
 PlayWaterSound:
     %PlayTileSound(#$1C)
 
+PlayMireWaterSound:
+    if !MireWaterSounds == !MireWaterSounds_NoFix
+        LDA #$1B : JSL Player_DoSfx2Long
+        JML PlayTileSound.RTS
+
+    elseif !MireWaterSounds == !MireWaterSounds_FixForRingJump
+        LDA !IsJumping : BNE +
+            LDA #$1B : JSL Player_DoSfx2Long
+        +
+        JML PlayTileSound.RTS
+
+    elseif !MireWaterSounds == !MireWaterSounds_FixForAllJumps
+        %PlayTileSound(#$1B)
+
+    else
+        error "Invalid value for \!MireWaterSounds."
+    endif
+
+
 FixHookshotY:
     LDA $24 : CMP #$FF : BEQ .doneWithZ
         LDA $00 : SEC : SBC $24 : STA $00
@@ -953,7 +974,7 @@ CheckJumpButtonPress:
         RTL
     .pressingR
 
-    if !AllowBunnyJumpAlways != 0
+    if !AllowBunnyJump == !AllowBunnyJump_Always
         LDA $5D
         CMP #$17 : BEQ .canJump ; permabunny = can jump
         CMP #$1C : BEQ .canJump ; temporary bunny = can jump
@@ -966,7 +987,7 @@ CheckJumpButtonPress:
     LDA $5D : BEQ .canJump ; normal state = can jump
     CMP #$11 : BEQ .canJump ; dashing = can jump
 
-    if !AllowBunnyJumpWithRing != 0
+    if !AllowBunnyJump == !AllowBunnyJump_WithRing
         CMP #$17 : BEQ .canJump ; permabunny = can jump
         CMP #$1C : BEQ .canJump ; temporary bunny = can jump
     endif
@@ -977,11 +998,11 @@ CheckJumpButtonPress:
         RTL
     .canJump
     LDA $5E : CMP #$10 : BNE .notDashing
-        PHX : PHB : PHK : PLB
+        PHB : PHK : PLB
         LDA $26 : ASL : ASL : TAX
         BRA .loadValues
     .notDashing
-        PHX : PHB : PHK : PLB
+        PHB : PHK : PLB
         LDA $F0 : ASL : ASL : TAX
     .loadValues
         LDA .values+0, X : AND #$0F : STA !JumpNonStartingDirections
@@ -1037,7 +1058,7 @@ CheckJumpButtonPress:
         endif
 
 
-        if !AllowBunnyJumpWithRing != 0 || !AllowBunnyJumpAlways != 0
+        if !AllowBunnyJump != !AllowBunnyJump_Never
             LDA $5D : CMP #$12 : BCS .isBunny
                 STZ $5D
             .isBunny
@@ -1050,7 +1071,7 @@ CheckJumpButtonPress:
         LDA #$01 : STA !IsJumping
         LDA #$20 : STA $46
         LDA #$00 : STA !JumpTimer
-        PLB : PLX
+        PLB
 RTL
     .values
         ; 1.a. direction type (0=no movement, 1=horizontal, 2=vertical, 3=both)
@@ -1076,10 +1097,52 @@ RTL
         db $30, $96, !JumpDistanceDiagonal, -!JumpDistanceDiagonal ; up/down/left
         db $30, $A5, !JumpDistanceDiagonal, !JumpDistanceDiagonal ; up/down/left/right
 
+MakeJumpNoise:
+    LDA $5D
+    BEQ .canHaveNoise
+    CMP #$17 : BEQ .canHaveNoise
+    CMP #$1C : BEQ .canHaveNoise
+        RTS
+    .canHaveNoise
+
+    %AllowsLandingNoise2(Result, OnWater, OnGrass)
+    if !Result != 0
+        LDA $0351
+
+        %AllowsLandingNoise(Result, OnWater)
+        if !Result != 0
+            CMP #$01 : BNE .notOnWater
+                LDA #$1C : JSL Player_DoSfx2Long
+                BRA .afterNoise
+            .notOnWater
+        endif
+
+        %AllowsLandingNoise(Result, OnGrass)
+        if !Result != 0
+            CMP #$02 : BNE .notOnGrass
+                LDA #$1A : JSL Player_DoSfx2Long
+                BRA .afterNoise
+            .notOnGrass
+        endif
+    endif
+
+    %AllowsLandingNoise(Result, OnLand)
+    if !Result != 0
+        LDA #$21 : JSL Player_DoSfx2Long
+        BRA .afterNoise
+    endif
+
+    .afterNoise
+RTS
+
 ExecuteJump:
-    PHX
     LDA !IsJumping : BNE .dontSkipJump
-        PLX
+    LDA !JumpTimer : BEQ .didntJustEndJump
+        %M_STZ(!JumpTimer,0)
+        if !LandingNoise != 0
+            JSR MakeJumpNoise
+        endif
+    .didntJustEndJump
         RTL
     .dontSkipJump
         ; End jump state once timer reaches its end
@@ -1094,25 +1157,24 @@ ExecuteJump:
                 BRA .dontEndJump
             .notFrameBeforeEnd
             CMP #$20 : BCC .dontEndJump
-                STZ !IsJumping
+                %M_STZ(!IsJumping,0)
                 STZ $24
                 STZ $27
                 STZ $28
-                PLX
                 RTL
             .dontEndJump
-            INC !JumpTimer
+            %M_INC(!JumpTimer,0)
             LDA #01 : STA $46
 
         ; Set Z coordinate
            PHB : PHK : PLB
-           LDX !JumpTimer
+           %M_LDX(!JumpTimer,0)
            LDA .z_coord, X : STA $24
            PLB
 
         ; Jump acceleration on non-starting directions
             LDA !JumpTimer : CMP #$19 : BCS .cannotAccelerate
-            LDA $F0 : AND !JumpNonStartingDirections : BEQ +
+            LDA $F0 : %M_AND(!JumpNonStartingDirections) : BEQ +
                 LDA !JumpDirectionType : AND #02 : BNE ++
                     LDA $F0 : AND #$04 : BEQ +++
                         LDA #$10 : STA $27
@@ -1148,11 +1210,11 @@ ExecuteJump:
 
         ; Calculate jump decceleration depending on current input
             LDX #$02
-            LDA $F0 : AND !JumpInverseDirection : BEQ +
+            LDA $F0 : %M_AND(!JumpInverseDirection) : BEQ +
                 INX
                 INX
             +
-            LDA $F0 : AND !JumpForwardDirection : BEQ +
+            LDA $F0 : %M_AND(!JumpForwardDirection) : BEQ +
                 DEX
             +
             STX $00
@@ -1178,7 +1240,6 @@ ExecuteJump:
             .horizontalPositive
                 LDA $28 : SEC : SBC $00 : STA $28
     .done
-    PLX
 RTL
   .z_coord
       db $02, $04, $06, $07, $09, $0A, $0B, $0C, $0D, $0E, $0F, $10, $10, $11, $11, $11

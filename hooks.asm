@@ -2887,6 +2887,9 @@ JSL RemoveWaterEffect : NOP #2
 org $07D159
 JML PlayGrassSound
 
+org $07D19F
+JML PlayMireWaterSound
+
 org $07D1A6
 JML PlayWaterSound
 
