@@ -32,13 +32,16 @@
 
 ; Addresses
 
-!JumpInverseDirection = $7C
-!JumpForwardDirection = $7D
-!JumpNonStartingDirections = $7E
-!JumpDirectionType = $7F
-!IsJumping = $80
-!JumpTimer = $81
-!JumpingAboveWater = $82
+function jumpvar(offset) = $7C+offset
+
+!JumpInverseDirection #= jumpvar(0)
+!JumpForwardDirection #= jumpvar(1)
+!JumpNonStartingDirections #= jumpvar(2)
+!JumpDirectionType #= jumpvar(3)
+!IsJumping #= jumpvar(4)
+!JumpTimer #= jumpvar(5)
+!JumpingAboveWater #= jumpvar(6)
+!JumpFrame #= jumpvar(7)
 
 ; Constants
 

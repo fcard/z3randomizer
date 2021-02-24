@@ -179,6 +179,11 @@ ExtraMenuNMIUpdate:
     CMP #$07 : BEQ .handleJumping
     CMP #$09 : BEQ .handleJumping
     CMP #$0B : BEQ .handleJumping
+    CMP #$06 : BEQ .resetJumping
+    CMP #$08 : BEQ .resetJumping
+    CMP #$0A : BEQ .resetJumping
+        BRA .afterJumping
+    .resetJumping
         %M_STZ(!IsJumping,0)
         %M_STZ(!JumpTimer,0)
         BRA .afterJumping
@@ -1017,7 +1022,6 @@ AddExtendedSwordXYToOam:
     STA $0800, X
 RTL
 
-
 ; Called every frame to check that the conditions to
 ; start a jump are met. In essence, they are:
 ;     * Link is not already jumping or stunned
@@ -1095,15 +1099,23 @@ CheckJumpButtonPress:
                 LDA #!JumpDistanceDash : STA $28
         +
 
-        ; Update Link's sprite when it's stationary
+        ; Update Link's sprite
+        LDA $50 : BNE .doneWithSprite
         LDA $2E ; Link's animation frame
         BEQ .stationarySprite
-        CMP #$01 : BEQ .stationarySprite
-        CMP #$05 : BEQ .stationarySprite
-            BRA .dontChangeSprite
+            ; When moving, alternate between animation frames
+            ; 3,4 and 7,8.
+            JSL GetRandomInt : AND #$01 : STA $00
+            LDA !JumpFrame : AND #$01 : ASL : CLC : ADC $00
+            TAX : LDA .moving_jump_sprites, X : STA $2E
+            %M_INC(!JumpFrame,0)
+            BRA .doneWithSprite
         .stationarySprite
-            LDA #$03 : STA $2E
-        .dontChangeSprite
+            ; When stationary, use a random animation frame
+            ; from 3, 4, 7, and 8.
+            JSL GetRandomInt : AND #$03 : TAX
+            LDA .stationary_jump_sprites, X : STA $2E
+        .doneWithSprite
 
         if !PushOutOfDoorway != 0
             LDA $2F : BNE + ; if facing up
@@ -1133,6 +1145,12 @@ CheckJumpButtonPress:
         LDA #$00 : STA !JumpTimer
         PLB
 RTL
+    .moving_jump_sprites
+        db $03, $04, $07, $08
+
+    .stationary_jump_sprites
+        db $07, $08, $03, $04
+
     .values
         ; 1.a. direction type (0=no movement, 1=horizontal, 2=vertical, 3=both)
         ; 1.b. non-starting directions
