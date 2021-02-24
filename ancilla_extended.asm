@@ -190,6 +190,8 @@ AncillaMaxSpriteCount:
     db $08, $10
 
 
+; Finds and jumps to the Ancilla object main routine
+; Input: A (Ancilla object Id)
 AncillaExt_JumpToRoutine:
     PHB : PHK : PLB
     TAY
@@ -201,12 +203,18 @@ AncillaExt_JumpToRoutine:
     PLB
 JML [$0000]
 
+; Load the maximum number of sprites the Ancilla object can draw
+; Input:  A (Ancilla object Id)
+; Output: A (Maximum sprite count)
 AncillaExt_LoadMaxSpriteCount:
     PHB : PHK : PLB
     LDA AncillaMaxSpriteCount-1, X
     PLB
 RTL
 
+; Set the special memory address for Ancilla coordinates
+; Input: $00 (Y coordinate, word)
+; Input: $02 (X coordinate, word)
 Ancilla_SetCoordsLong:
     LDA $00 : STA $0BFA, X
     LDA $01 : STA $0C0E, X
@@ -216,6 +224,7 @@ Ancilla_SetCoordsLong:
 RTL
 
 ; ==============================================================================
+
 function AncillaExt_CalculateHiOamIndex(index) = (index-4)>>2
 
 macro AncillaExt_CalculateHiOamIndex()
@@ -407,13 +416,18 @@ endif
 AncillaExt_AddLightSpin:
     LDA #$45
     JSL AddAncillaLong : BCS .noOpenSlots
-        LDA #$00 : STA $0BF0, X
-        LDA #$00 : STA $0C54, X
-        LDA #$00 : STA $0C5E, X
-        LDA #$01 : STA $0C68, X
+        LDA #$00 : STA $0BF0, X ; Color (0 = Yellow, 1 = Blue)
+        LDA #$00 : STA $0C54, X ; Executing Final Spark (1 = Yes, 0 = No)
+        LDA #$00 : STA $0C5E, X ; Increasing timer for the spin animation
+
+        LDA #$01 : STA $0C68, X ; For the spin animation, used to advance the
+                                ; animation only when the game is not paused.
+                                ; Used as an actual timer for the closing spark.
     .noOpenSlots
 RTL
 
+; Main routine of the Light Spin, the effect
+; the Light Ring adds to the spin attack.
 AncillaExt_LightSpin:
     LDA $0C54, X : BNE .closingSpark
         JSR AncillaExt_LightSpinSp
@@ -423,52 +437,70 @@ AncillaExt_LightSpin:
     .done
 JML AncillaExt_Return
 
+; Spin part of the animation
 AncillaExt_LightSpinSp:
     LDA $0C5E, X : CMP #!LightSpinDuration : BCC .dontClose
-        LDA #$01 : STA $0C54, X
-        LDA #$04 : STA $0C68, X
+        LDA #$01 : STA $0C54, X ; Change state to the closing spark
+        LDA #$04 : STA $0C68, X ; Set duration to 4 frames
         RTS
 
     .dontClose
          PHB : PHK : PLB
          PHY : PHX
 
-         PHA
-         ASL : STA $00
-         LDA $0C68, X : BNE .dontIncrement
+         ASL : STA $00 ; The value currently in $00 is the value used to index into
+                       ; the x and y offset tables. It will switch locations between
+                       ; $00 and the X register.
+                       ; This value is calculated by taking the current frame
+                       ; of the animation and multiplying it by two. As we will
+                       ; draw a few sprites in different points of the spin,
+                       ; we will increment this value between each draw.
+
+
+         ; This blocks the animation timer from being incremented until
+         ; the ancilla timer is decremented. This keeps it from increasing
+         ; while the game is paused.
+         LDA $0C68, X : BNE +
              LDA #$01 : STA $0C68, X
-             PLA : INC : STA $0C5E, X
+             INC $0C5E, X
              BRA +
-         .dontIncrement
-             PLA
          +
 
+         ; Prepare the state for the draw loop.
+         ; The next value in the stack will be the index of the
+         ; sprite table, '.spark_char'.
          LDX #$00 : PHX
-         LDY #$00
+         LDY #$00 ; Y is the index into the OAM buffer
 
-         .drawSpark
+         .drawSpark ; start of the draw loop. We will draw 4 sprites,
+                    ; each further in the spin animation.
 
-         LDX $00
+         LDX $00 ; Load x/y offset index. This will remain in the
+                 ; X register until later in the iteration, where
+                 ; it will be restored to the $00 address.
+
+         ; If we're past the end of the x/y offset tables, we end the loop now.
          CPX #(!LightSpinDuration*2) : BCS .doneDrawing
 
          REP #$20
 
-         LDA .y_offsets, X : STA $00
-         LDA .x_offsets, X : STA $02
-
-         LDA $20 : SEC : SBC $E8 : CLC : ADC $00 : STA $00
-         LDA $22 : SEC : SBC $E2 : CLC : ADC $02 : STA $02
+         ; Calculate x/y coordinates of sprites by calculating Link's
+         ; coordinates relative to the screen, then adding the offsets.
+         LDA $20 : SEC : SBC $E8 : CLC : ADC .y_offsets, X : STA $00
+         LDA $22 : SEC : SBC $E2 : CLC : ADC .x_offsets, X : STA $02
 
          SEP #$20
          JSL Ancilla_SetSafeOam_XY_Long
 
-         STX $00
-         INC $00
-         INC $00
-         PLX
+         STX $00 ; as promised, set $00 once again to the index of the x/y offset tables
+         INC $00 ; increment $00 to the position of the next sprite. Note that we
+         INC $00 ; don't bring this change back to the timer.
 
+         PLX ; Load the sprite index
          LDA .spark_char, X : STA ($90), Y : INY
 
+         ; Set the color properties of the sprite, then switch
+         ; the color variable to the alternate for the next frame.
          LDA $0BF0, X : BEQ .blue
              LDA #$22 : STA ($90), Y : INY
              LDA #$00 : STA $0BF0, X
@@ -478,12 +510,13 @@ AncillaExt_LightSpinSp:
              LDA #$01 : STA $0BF0, X
          .doneColors
 
+         ; Set high oam values (always 0x00)
          PHY : %AncillaExt_CalculateHiOamIndex()
          LDA #$00 : STA ($92), Y
          PLY
 
-         INX : PHX
-         CPX #04 : BCC .drawSpark
+         INX : PHX ; increment sprite index
+         CPX #04 : BCC .drawSpark ; do while sprite index < 4
 
          .doneDrawing
 
@@ -524,15 +557,18 @@ elseif !LightSpinSize == 40
     dw 21, 33, 41, 47, 49, 47, 41, 33, 21
 endif
 
+; Final spark after the spin animation: A larger spark that lingers for a few frames
 AncillaExt_LightSpinClosingSpin:
     LDA $0C68, X : BNE .dontTerminate
-        STZ $0C4A, X
+        STZ $0C4A, X ; terminate object
         RTS
 
     .dontTerminate
          PHX
          PHB : PHK : PLB
 
+         ; The spark is yellow for the first two frames, (timer is 4,3)
+         ; and blue for the last two (timer is 2,1).
          LDA $0C68, X : CMP #$03 : BCC .blue
          ;.yellow
              LDA #$02 : STA $04
@@ -542,21 +578,31 @@ AncillaExt_LightSpinClosingSpin:
          .doneColors
 
          REP #$20
+         ; Calculate Y coordinate: Final position of the spin animation
+         ; but a little up.
          LDA $20 : SEC : SBC $E8 : SEC : SBC #$0008
          CLC : ADC AncillaExt_LightSpinSp_y_offsets+((!LightSpinDuration-1)*2)
          STA $00
 
+         ; Calculate X coordinate: Final position of the spin animation
+         ; but a little to the left.
          LDA $22 : SEC : SBC $E2 : SEC : SBC #$0004
          CLC : ADC AncillaExt_LightSpinSp_x_offsets+((!LightSpinDuration-1)*2)
          STA $02
          SEP #$20
 
+         ; The final graphic is 16x16, but it is actually a single
+         ; 8x8 sprite flipped in different ways, so we must draw
+         ; 4 sprites.
+
+         ; Draw top left sprite
          LDY #$00
          JSL Ancilla_SetSafeOam_XY_Long
          LDA #$D6 : STA ($90),Y : INY
          LDA #$20 : ORA $04 : STA ($90),Y
          LDA #$00 : STA ($92)
 
+         ; Draw bottom left sprite
          LDA $00 : CLC : ADC #$08 : STA $00
 
          LDY #$04
@@ -565,6 +611,7 @@ AncillaExt_LightSpinClosingSpin:
          LDA #$A0 : ORA $04 : STA ($90),Y
          LDY #$01 : LDA #$00 : STA ($92), Y
 
+         ; Draw bottom right sprite
          LDA $02 : CLC : ADC #$08 : STA $02
 
          LDY #$08
@@ -573,6 +620,7 @@ AncillaExt_LightSpinClosingSpin:
          LDA #$E0 : ORA $04 : STA ($90),Y
          LDY #$02 : LDA #$00 : STA ($92), Y
 
+         ; Draw top right sprite
          LDA $00 : SEC : SBC #$08 : STA $00
 
          LDY #$0C

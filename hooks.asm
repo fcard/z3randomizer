@@ -2879,7 +2879,7 @@ org $07D1C2
 JSL SetWaterEffect2 : NOP
 
 org $07D1E5
-JSL RemoveWaterEffect : NOP #2
+JSL RemoveWaterOrGrassEffect : NOP #2
 
 org $07D159
 JML PlayGrassSound

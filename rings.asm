@@ -607,7 +607,7 @@ RTL ; following code will sta $7EF360
 AddDungeonRupees:
     ; Output: A register = total rupees before adding 5 more
     LDA !RupeeRingFlag : AND #$00FF : BEQ + ; check if we have the rupee ring
-        LDA $07EF360 : CLC : ADC #$0005 ; Add 5 more
+        LDA $7EF360 : CLC : ADC #$0005 ; Add 5 more
         RTL
     +
     LDA $07EF360
@@ -619,13 +619,13 @@ AddChestRupees:
     ; Input: $00 = amount to add
     ; Output: A register = total rupees after addition
     LDA !RupeeRingFlag : AND #$00FF : BEQ + ; check if we have the rupee ring
-        LDA $07EF360
+        LDA $7EF360
         CLC
         ADC $00
         ADC $00
         RTL
     +
-    LDA $07EF360
+    LDA $7EF360
     CLC
     ADC $00
 RTL
@@ -655,17 +655,21 @@ HandleJumping:
 RTL
 
 StopJump:
-    STZ !IsJumping
+    %M_STZ(!IsJumping,0)
 RTL
 
+; Handle jumping over a button that requires
+; Link to be standing on it.
 ChangeTrapDoorState:
     LDA !IsJumping : AND #$00FF : BNE +
-        STX $0468
-        STZ $068E
+        STX $0468 ; thing we wrote over
+        STZ $068E ; ^
         JML ChangeTrapDoorState.ReturnPoint
     +
 JML ChangeTrapDoorState.EndPoint
 
+; Handle jumping over a button that keeps
+; its state after Link steps away from it.
 PressGroundSwitch:
     LDA !IsJumping : AND #$00FF : BNE +
         LDA $0430 : BNE +
@@ -673,6 +677,9 @@ PressGroundSwitch:
     +
 JML PressGroundSwitch.EndPoint
 
+; Handle jumping over the tiles with a drawing of
+; a yellow shine that change the formation of the
+; pits of the floor.
 ChangePitGroupsInFloor:
     PHA
     LDA !IsJumping : BNE +
@@ -684,6 +691,11 @@ ChangePitGroupsInFloor:
     PLA
 JML ChangePitGroupsInFloor.EndPoint
 
+; Don't update the variables that cache Link's
+; coordinates and other state while jumping, so
+; that when Link falls into water his position
+; and state is restored to where it was before
+; the jump.
 CacheStateForJump:
     LDA $1B : BNE +
     LDA !IsJumping : BNE +
@@ -691,6 +703,9 @@ CacheStateForJump:
     +
 JML CacheStateForJump.ReturnPoint
 
+; Skip part of the Soldier's layer check
+; when jumping so that Link can attack
+; them on midair.
 CheckSoldierOnSameLayer:
     LDA !IsJumping : BNE +
         LDA $46 : ORA $4D
@@ -699,6 +714,9 @@ CheckSoldierOnSameLayer:
     LDA #$00
 RTL
 
+; Don't reset height on recoil if jumping,
+; so Link won't have an inconsistent Z position
+; if he e.g. hits a Soldiers sword with his own.
 ResetHeightOnRecoil:
     LDA !IsJumping : BNE +
         STZ $24
@@ -706,12 +724,16 @@ ResetHeightOnRecoil:
     +
 RTL
 
+; Skip changing Link's state to "near a hole" if he
+; is jumping, so his jump isn't cancelled.
 FallIntoHole:
     LDA !IsJumping : BNE +
         LDA #$01 : STA $5B : STA $5D
     +
 RTL
 
+; Skip the code that dumps Link into water
+; if he is in midair.
 macro CheckJumpingAboveWater(fall_into_water, jump_above_water)
     LDA !IsJumping : BNE +
     LDA $4D : BNE +
@@ -728,12 +750,20 @@ CheckJumpingAboveWaterV:
     %CheckJumpingAboveWater(CheckJumpingAboveWaterV.FallIntoWater,\
                             CheckJumpingAboveWaterV.JumpAboveWater)
 
+; Don't reset Link's Z coordinates to $FFFF if he is jumping.
+; This code is called periodically if he is not in a substate
+; that would put him in midair. Since we don't use the normal
+; substate address, $4D, we must add our own branch.
 ResetZCoordinates:
     LDA !IsJumping : BNE +
         LDA #$FF : STA $24 : STA $25
     +
 RTL
 
+; Don't zero the counter $030D if we're jumping. This is used
+; by the bug catching net to forward its animation. This counter
+; used to be zeroed every frame that the $46 counter is not zero,
+; which is always true for when Link is jumping.
 ZeroCountersForStun:
     LDA !IsJumping : BNE +
         STZ $030D
@@ -741,14 +771,21 @@ ZeroCountersForStun:
     STZ $030E
 RTL
 
+; Change the conditions allowing Link to use Y items in midair.
+; Normally he is unable to if the $46 counter is nonzero, we've
+; added a branch to skip that check if we're jumping (and if we
+; meet a few other conditions, see below)
 CheckYPress:
+    ; To avoid a few glitches, we must limit the use of certain
+    ; items if we are above deep water.
     LDA $0303
-    CMP #$02 : BEQ .boomerang ; cannot jump above water if boomerang (about to hit water)
+    CMP #$02 : BEQ .boomerang ; cannot use boomerang above deep water
+                              ; (and is about to hit water)
     if !AllowHookshotWaterJump != 0
         CMP #$0F : BCC .canJumpAndUse ; or medallions
-        CMP #$12 : BCC .canJumpAndUse
+        CMP #$12 : BCC .canJumpAndUse ; ^
     else
-        CMP #$0E : BCC .canJumpAndUse ; hookshot
+        CMP #$0E : BCC .canJumpAndUse ; or hookshot
         CMP #$12 : BCS .canJumpAndUse ; or medallions
     endif
     LDA !JumpingAboveWater : BNE .cannotJumpAndUse
@@ -767,6 +804,9 @@ CheckYPress:
     +
 JML CheckYPress.Continue
 
+; If we're jumping, skip the code that allows
+; Link to jump off ledges. Very buggy things
+; happen if he starts to drop off a ledge midjump.
 JumpLedge:
     LDA $4D : CMP #$01 : BNE +
         JML JumpLedge.BranchAlpha
@@ -776,6 +816,7 @@ JumpLedge:
     +
 JML JumpLedge.ReturnPoint
 
+; Handle jumping over dungeon warp tiles
 CheckDungeonWarpCollision:
     LDA !IsJumping : BNE +
     LDA $4D : BNE +
@@ -783,18 +824,23 @@ CheckDungeonWarpCollision:
     +
 JML CheckDungeonWarpCollision.BranchPoint
 
+; Don't change Link's state to falling off a ledge if he is jumping
+; (Possibly unnecessary with JumpLedge?)
 FallFromLedge:
     LDA !IsJumping : BNE +
         LDA #$06 : STA $5D
     +
 RTL
 
+; Don't change Link's state to falling off a ledge if he is jumping
+; (Possibly unnecessary with JumpLedge?)
 FallFromLedge2:
     LDA !IsJumping : BNE +
         LDA #$02 : STA $5D
     +
 RTL
 
+; Don't set any effects around Link if he is jumping (water/grass)
 macro SetTileEffect(value)
     LDA !IsJumping : BNE +
         LDA #<value> : STA $0351
@@ -813,12 +859,13 @@ SetWaterEffect2:
     LDA #$01 : STA !JumpingAboveWater
     %SetTileEffect($01)
 
-RemoveWaterEffect:
+RemoveWaterOrGrassEffect:
     LDA #$00 : STA !JumpingAboveWater
     STZ $0351 ; thing we wrote over
     LDA $02EE ; ^
 RTL
 
+; Don't play grass/water sounds if Link is jumping
 macro PlayTileSound(sound)
     LDA !IsJumping : BNE +
     LDA $4D : BNE +
@@ -852,6 +899,7 @@ PlayMireWaterSound:
     endif
 
 
+; Make the hookshot follow Link up when he jumps
 FixHookshotY:
     LDA $24 : CMP #$FF : BEQ .doneWithZ
         LDA $00 : SEC : SBC $24 : STA $00
@@ -861,6 +909,13 @@ FixHookshotY:
     +
 JML FixHookshotY.BranchPoint
 
+; When the hookshot's chain is drawn,
+; the bits that are too close to Link
+; are ommited. Below we recalculate
+; the hookshot's Y coordinate without
+; the changes from the height so it
+; can do proper collision checking
+; with Link.
 FixHookshotY2:
     LDA $24 : CMP #$FFFF : BNE .hasZ
         LDA $00
@@ -873,6 +928,14 @@ FixHookshotY2:
     STA $72
 RTL
 
+; Fix the boomerang being mispositioned when used during
+; a jump, specifically the part in the animation where
+; it's held in Link's hand. This changes the boomerang
+; draw logic to always use Link's current coordinates,
+; instead of using a cached value. It also, of course,
+; adjusts the Y coordinate with Link's height off the
+; ground. `.typical_y_offsets` and `typical_x_offsets`
+; are copied verbatim from the disassembly.
 UpdateHeldBoomerangCoords:
     PHB : PHK : PLB
     REP #$20
@@ -906,6 +969,8 @@ JML UpdateHeldBoomerangCoords.ReturnPoint
     dw  -9,  11,   8,  -8, -10,  11,   8,  -8
 
 
+; Have the boomerang start at Link's height off the ground
+; when thrown.
 FixBoomerangY:
     LDA $24 : CMP #$FFFF : BEQ .noZ
         LDA $20
@@ -921,6 +986,9 @@ FixBoomerangY:
         STA $00
 JML FixBoomerangY.ReturnPoint
 
+; Update the little sparkles from Link's sword
+; to match his height off the ground. Only
+; applicable to Master Sword and up.
 SetYCoordinateForSwingSparkle:
     LDA $20 : CLC : SBC $24 : STA $0BFA, X
     LDA $21 : SBC $25 : STA $0C0E, X
@@ -934,6 +1002,9 @@ CheckIfSmallShadow:
     LDA $4D
 JML CheckIfSmallShadow.Yes
 
+; Update the the tip of Link's sword
+; to match his height off the ground.
+; Only applicable to Master Sword and up.
 AddExtendedSwordXYToOam:
     LDA $24 : CMP #$FFFF : BEQ +
         SEP #$20
@@ -947,6 +1018,13 @@ AddExtendedSwordXYToOam:
 RTL
 
 
+; Called every frame to check that the conditions to
+; start a jump are met. In essence, they are:
+;     * Link is not already jumping or stunned
+;     * Link is in a ground state
+;     * Link has the Gravity Ring (or is a bunny with the appropriate setting)
+;     * The R button was pressed this frame
+;
 CheckJumpButtonPress:
     LDA $46 : BEQ .canMove ; stun countdown different than 0
         RTL
@@ -1079,6 +1157,9 @@ RTL
         db $30, $96, !JumpDistanceDiagonal, -!JumpDistanceDiagonal ; up/down/left
         db $30, $A5, !JumpDistanceDiagonal, !JumpDistanceDiagonal ; up/down/left/right
 
+
+; Called when Link lands after a jump, and will make a noise
+; depending on the surface he has landed on and the current settings.
 MakeJumpNoise:
     LDA $5D
     BEQ .canHaveNoise
@@ -1117,6 +1198,8 @@ MakeJumpNoise:
     .afterNoise
 RTS
 
+; Called every frame, advances the jump state
+; and updates Link's state according to it.
 ExecuteJump:
     LDA !IsJumping : BNE .dontSkipJump
     LDA !JumpTimer : BEQ .didntJustEndJump
@@ -1230,7 +1313,8 @@ RTL
 
 ; Guard/Fire Rings
 
-
+; Called after a SBC
+; Optimized for different values
 macro BranchIfGreaterOrEqual(minimum, address)
     if <minimum> == 0
         BNE <address>
@@ -1245,6 +1329,11 @@ macro BranchIfGreaterOrEqual(minimum, address)
     endif
 endmacro
 
+; Apply damage reduction without scaling
+; address        = contains the damage value
+; value          = damage reduction (constant)
+; endpoint       = where to branch to at the end
+; branchendpoint = if we should branch to the endpoint (bool)
 macro _DamageReduction(address, value, endpoint, branchendpoint)
     LDA <address> : SEC : SBC #<value>
     %BranchIfGreaterOrEqual(!MinimumDamage, <endpoint>)
@@ -1255,6 +1344,10 @@ macro _DamageReduction(address, value, endpoint, branchendpoint)
 endmacro
 
 
+; Apply damage reduction
+; address  = contains the damage value
+; value    = damage reduction (constant)
+; endpoint = where all branches should end at
 macro DamageReduction(address, value, endpoint)
     if !GuardRingDiminishingEffect != 0
         LDA $7EF35B : BEQ ?greenMail ; Check current mail
@@ -1270,6 +1363,9 @@ macro DamageReduction(address, value, endpoint)
     endif
 endmacro
 
+; Called before damage is subtracted from Link's health
+; Input: $00 (damage value)
+; Output: $00 (damage value with reduction)
 RingDamageReduction:
     ; Bomb Damage / Fire Ring
     LDA !BombDamage : BEQ +
@@ -1308,13 +1404,15 @@ RingDamageReduction:
     .done
 RTL
 
-BombDamage: ; called when link's bomb damages him
+; called when Link's bomb damages him
+BombDamage:
     LDA #1 : STA !BombDamage
     LDA $7EF35B : TAY
     LDA $980B, Y : STA $0373
 RTL
 
-GarnishFireDamage: ; used by Trinexx's and some of Ganon's fire
+; Used by Trinexx's and some of Ganon's fire
+GarnishFireDamage:
     PHB : PHK : PLB
     LDA #1 : STA !GarnishFire ; flag for Garnish_CheckPLayerCollision
     LDA .chr_indices, X : TAX         ; thing we wrote over
@@ -1340,16 +1438,17 @@ JML Garnish_CheckPlayerCollision            ; ^
         db 5, 4, 5, 4, 5, 4, 5, 4
 ;---------------------------------------------------
 
-
-GarnishOnCollision: ; called when "garnish" objects hit Link,
-                    ; like Aghanim's lightning trail or Trinexx's fire
+; called when "garnish" objects hit Link,
+; like Aghanim's lightning trail or Trinexx's fire
+GarnishOnCollision:
     LDA !GarnishFire : BEQ +
         LDA #1 : STA !FireDamage
     +
     LDA #$10 : STA $46 ; thing we wrote over
 RTL
 
-GeneralDamage: ; When most things hit link
+; When most things hit link
+GeneralDamage:
     PHA
 
     ; Set Elemental Damage flags
@@ -1366,6 +1465,7 @@ GeneralDamage: ; When most things hit link
     JSL.l LoadModifiedArmorLevel
 RTL
 
+; Unused
 SpikeDamage:
     LDA #1 : STA !SpikeDamage
     LDA $7EF35B : TAY
@@ -1380,6 +1480,10 @@ macro ExtraDamage(extra)
     + STA $0CE2,X
 endmacro
 
+; Called right before any sprite's health has damaged subtracted from it.
+; We add our extra damage from the power/sword ring here.
+; Input:  $00 (damage)
+; Output: $00 (damage + extra damage)
 DamageSprite:
     LDA !PowerRingFlag : BEQ .afterExtraDamage
         CMP #01 : BNE .swordRing
@@ -1394,9 +1498,13 @@ RTL
 
 ; Light Ring
 
+; Sword slash damage
+; no sword, fighter, master, tempered, golden
 SwordDamageTable:
 db 0, 2, 4, 8, 16
 
+; Change sword beam damage to the same as the
+; basic sword slash, if we have the Light Ring.
 SwordBeamDamage:
      LDA !LightRingFlag : BEQ .noLightRing
          PHB : LDA.b #bank(SwordDamageTable) : PHA : PLB
@@ -1407,6 +1515,10 @@ SwordBeamDamage:
          LDA #02
 RTL
 
+; Setup hit box for the charged spin attack
+; minusx = Subtracts from Link's X coordinate for the starting X of the hitbox
+; minusy = Subtracts from Link's Y coordinate for the starting Y of the hitbox
+; size   = Width and height-1 of the hitbox
 macro SpinAttackHitBox(minusx,minusy,size)
     LDA $22 : SEC : SBC.b #<minusx> : STA $00
     LDA $23 : SBC.b #$00 : STA $08
@@ -1415,9 +1527,11 @@ macro SpinAttackHitBox(minusx,minusy,size)
     LDA $21 : SBC.b #$00 : STA $09
 
     LDA.b #<size> : STA $02
-    INC A       : STA $03
+    INC A         : STA $03
 endmacro
 
+; Increase spin attack hitbox by 6 pixels at each direction
+; if we have the Light Ring.
 SpinAttackHitBox:
     LDA !LightRingFlag : BEQ .noLightRing
         %SpinAttackHitBox($000E+6,$000A+6,$002C+12)
@@ -1427,14 +1541,16 @@ SpinAttackHitBox:
         %SpinAttackHitBox($000E,$000A,$002C)
 RTL
 
-
+; Hook into a early part of the spin attack
+; animation so we can spawn our own new effect.
 SpinAttackAnimationTimers:
     LDA !LightRingFlag : BEQ .noLightRing
         PHX
         JSL AncillaExt_AddLightSpin
         PLX
     .noLightRing
-    LDA #$02 : STA $03B1, X
-    LDA #$4C : STA $0C5E, X
-    LDA #$08 : STA $039F, X
+    LDA #$02 : STA $03B1, X ; thing we wrote over
+    LDA #$4C : STA $0C5E, X ; ^
+    LDA #$08 : STA $039F, X ; ^
 RTL
+
