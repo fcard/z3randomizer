@@ -5,6 +5,7 @@
 !PushOutOfDoorway = 1 ; Push Link out of vertical doorways when he jumps
 !AllowHookshotWaterJump = 0 ; Allow using hookshot while jumping above deep water
 !AllowStairJump = 0 ; Allow jumping while on outdoor staircases
+!AllowCutsceneJump = 0 ; Allow jumping while on cutscenes
 
 ; !AllowBunnyJump: Allow Bunny Link to jump with the R button
 

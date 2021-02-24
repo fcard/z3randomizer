@@ -1034,6 +1034,12 @@ CheckJumpButtonPress:
         RTL
     .canMove
 
+    if !AllowCutsceneJump == 0
+        LDA $02E4 : BEQ .notInCutscene
+            RTL
+        .notInCutscene
+    endif
+
     LDA $F6 : AND #$10 : BNE .pressingR
         RTL
     .pressingR
@@ -1244,6 +1250,11 @@ ExecuteJump:
                 STZ $24
                 STZ $27
                 STZ $28
+                if !AllowCutsceneJump != 0
+                    LDA $02E4 : BEQ .notInCutscene
+                        STZ $46
+                    .notInCutscene
+                endif
                 RTL
             .dontEndJump
             %M_INC(!JumpTimer,0)
