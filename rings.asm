@@ -116,24 +116,6 @@ SetSpriteProperties:
     LDA $040A : LDY $1B ; thing we wrote over
 RTL
 
-; Helper Variables
-!UpdateRingGraphics = $7FFFFF
-!RButtonHeld = $7FFFFE
-!WhichMenu = $7FFFFD
-!UpdateMenuRingGraphics = $7FFFFC
-!BombDamage = $7FFFFB
-!FireDamage = $7FFFFA
-;!SpikeDamage = $7FFFF9
-;!GarnishFire = $7FFFF8
-
-; Ring Flags
-!RupeeRingFlag = $7F6600
-!GravityRingFlag = $7F6601
-!FireRingFlag = $7F6602
-!LightRingFlag = $7F6603
-!PowerRingFlag = $7F6604
-!GuardRingFlag = $7F6605
-
 !PaletteOrange = 0
 !PaletteRed    = 1
 !PaletteYellow = 2
@@ -1248,8 +1230,6 @@ RTL
 
 ; Guard/Fire Rings
 
-!GuardRingDiminishingEffect = 0 ; Guard Ring effect goes down with armor upgrades (0:no, 1:yes)
-!MinimumDamage = 01 ; Minimum damage after ring damage reduction
 
 macro BranchIfGreaterOrEqual(minimum, address)
     if <minimum> == 0

@@ -2720,9 +2720,6 @@ Garnish_CheckPlayerCollision:
 org $09B482 ; garnish_lightning_trail.asm:64 : LDA.b #$10 : STA $46
 JSL GarnishOnCollision
 
-!GarnishFire = $7FFFF8 ; flag set by GarnishFireDamage,
-                       ; checked and reset by Garnish_CheckPlayerCollision
-
 org $09B495 ; garnish_lightning_trail.asm:71 : RTS
 ; end of Garnish_CheckPlayerCollision
 LDA #00 : STA !GarnishFire
