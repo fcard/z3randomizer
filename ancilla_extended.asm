@@ -603,7 +603,9 @@ AncillaExt_LightSpinClosingSpin:
          LDA #$00 : STA ($92)
 
          ; Draw bottom left sprite
-         LDA $00 : CLC : ADC #$08 : STA $00
+         REP #$20
+         LDA $00 : CLC : ADC #$0008 : STA $00
+         SEP #$20
 
          LDY #$04
          JSL Ancilla_SetSafeOam_XY_Long
@@ -612,7 +614,9 @@ AncillaExt_LightSpinClosingSpin:
          LDY #$01 : LDA #$00 : STA ($92), Y
 
          ; Draw bottom right sprite
-         LDA $02 : CLC : ADC #$08 : STA $02
+         REP #$20
+         LDA $02 : CLC : ADC #$0008 : STA $02
+         SEP #$20
 
          LDY #$08
          JSL Ancilla_SetSafeOam_XY_Long
@@ -621,7 +625,9 @@ AncillaExt_LightSpinClosingSpin:
          LDY #$02 : LDA #$00 : STA ($92), Y
 
          ; Draw top right sprite
-         LDA $00 : SEC : SBC #$08 : STA $00
+         REP #$20
+         LDA $00 : SEC : SBC #$0008 : STA $00
+         SEP #$20
 
          LDY #$0C
          JSL Ancilla_SetSafeOam_XY_Long
