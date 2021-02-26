@@ -87,6 +87,8 @@ db #$20, #$19, #$08, #$31 ; year/month/day
 ;!REG_MUSIC_CONTROL = $012C
 !REG_MUSIC_CONTROL_REQUEST = $012C
 
+incsrc newitem_macro.asm
+incsrc var_macro.asm
 incsrc multisize_ops.asm
 incsrc ring_defines.asm
 incsrc jump_defines.asm

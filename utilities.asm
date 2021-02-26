@@ -3,49 +3,6 @@
 ;================================================================================
 !PROGRESSIVE_SHIELD = "$7EF416" ; ss-- ----
 
-macro RingLimit(location)
-    if <location> == $7F6602
-        CMP.l ProgressiveFireRingLimit
-    elseif <location> == $7F6604
-        CMP.l ProgressivePowerRingLimit
-    elseif <location> == $7F6605
-        CMP.l ProgressiveGuardRingLimit
-    endif
-endmacro
-
-macro RingReplacement(location)
-    if <location> == $7F6602
-        LDA.l ProgressiveFireRingReplacement
-    elseif <location> == $7F6604
-        LDA.l ProgressivePowerRingReplacement
-    elseif <location> == $7F6605
-        LDA.l ProgressiveGuardRingReplacement
-    endif
-endmacro
-
-macro GetRingId(location, id1, id2, getid)
-    LDA.l <location> : %RingLimit(<location>) : BCC +
-        %RingReplacement(<location>)
-        JSL.l <getid>
-        RTL
-    +
-        CMP #$00 : BNE ?second_item
-            LDA.b <id1> : RTL
-        ?second_item:
-            LDA.b <id2> : RTL
-endmacro
-
-macro GetRingSpriteID(location, id1, id2)
-    %GetRingId(<location>, <id1>, <id2>, GetSpriteID)
-endmacro
-
-macro GetRingPalette(location, id1, id2)
-    %GetRingId(<location>, <id1>, <id2>, GetSpritePalette)
-endmacro
-
-;--------------------------------------------------------------------------------
-; GetSpriteTile
-
 ;--------------------------------------------------------------------------------
 ; GetSpriteTile
 ; in:	A - Loot ID
@@ -80,7 +37,6 @@ GetSpriteID:
 		.server_F2
 			JSL.l ItemVisualServiceRequest_F2
 	.normal
-		
 	PHX
 	PHB : PHK : PLB
 	;--------
@@ -89,13 +45,11 @@ GetSpriteID:
 	CMP.b #$F5 : !BGE .specialHandling
 RTL
 	.specialHandling
-	CMP.b #$F7 : BNE ++ ; Progressive Fire Ring
-      %GetRingSpriteID($7F6602, #$4D, #$4E)
-	++ CMP.b #$F6 : BNE ++ ; Progressive Power Ring
-      %GetRingSpriteID($7F6604, #$50, #$51)
-	++ CMP.b #$F5 : BNE ++ ; Progressive Guard Ring
-      %GetRingSpriteID($7F6605, #$52, #$53)
-	++ CMP.b #$F9 : BNE ++ ; Progressive Magic
+  if !EnableRings != 0
+      JML GetRingSpriteID
+      .ringReturn
+  endif
+  CMP.b #$F9 : BNE ++ ; Progressive Magic
 		LDA.l $7EF37B : BNE +++
 			LDA.b #$3B : RTL ; Half Magic
 		+++
@@ -196,20 +150,7 @@ RTL
 	;Ax
 	db $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F ; Free Small Key
 
-	db $4B ; Rupee Ring
-  db $4C ; Gravity Ring
-  db $4D, $4E ; Fire/Flame Ring
-  db $4F ; Light Ring
-  db $50, $51 ; Power/Sword Ring
-  db $52, $53 ; Guard/Diamond Ring
-  db $F7 ; Progressive Fire Ring
-  db $F6 ; Progressive Power Ring
-  db $F5 ; Progressive Guard Ring
-  db $49, $49, $49, $49 ; Unused
-	db $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49 ; Unused
-	db $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49 ; Unused
-	db $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49 ; Unused
-	db $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49, $49 ; Reserved
+  %AddItemData(special_sprite)
 }
 ;--------------------------------------------------------------------------------
 
@@ -243,13 +184,11 @@ GetSpritePalette:
 	CMP.b #$F5 : !BGE .specialHandling
 RTL
 	.specialHandling
-	CMP.b #$F7 : BNE ++ ; Progressive Fire Ring
-      %GetRingPalette($7F6602, #$02, #$02)
-	++ CMP.b #$F6 : BNE ++ ; Progressive Power Ring
-      %GetRingPalette($7F6604, #$08, #$08)
-	++ CMP.b #$F5 : BNE ++ ; Progressive Guard Ring
-      %GetRingPalette($7F6605, #$04, #$04)
-	++ CMP.b #$FD : BNE ++ ; Progressive Sword
+  if !EnableRings != 0
+      JML GetRingPalette
+      .ringReturn
+  endif
+	CMP.b #$FD : BNE ++ ; Progressive Sword
 		LDA $7EF359
 		CMP.l ProgressiveSwordLimit : !BLT + ; Progressive Sword Limit
 			LDA.l ProgressiveSwordReplacement
@@ -339,20 +278,7 @@ RTL
 	;db $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08 ; *EVENT*
 	db $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08 ; Free Big Key
 	db $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08 ; Free Small Key
-	db $04 ; Rupee Ring
-  db $04 ; Gravity Ring
-  db $02, $02 ; Fire/Flame Ring
-  db $08 ; Light Ring
-  db $08, $08 ; Power/Sword Ring
-  db $04, $04 ; Guard/Diamond Ring
-  db $F7 ; Progressive Fire Ring
-  db $F6 ; Progressive Power Ring
-  db $F5 ; Progressive Guard Ring
-  db $08, $08, $08, $08 ; Unused
-	db $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08 ; Unused
-	db $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08 ; Unused
-	db $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08 ; Unused
-	db $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08, $08 ; Unused
+  %AddItemData(palette)
 }
 ;--------------------------------------------------------------------------------
 

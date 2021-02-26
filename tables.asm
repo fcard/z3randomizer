@@ -403,18 +403,6 @@ ProgressiveBowLimit:
 db #$02 ; #$02 - 2 Bows (default)
 ProgressiveBowReplacement:
 db #$47 ; #$47 - 20 Rupees (default)
-ProgressiveFireRingLimit:
-db #$02 ; #$02 - 2 Rings (default)
-ProgressiveFireRingReplacement:
-db #$47 ; #$47 - 20 Rupees (default)
-ProgressivePowerRingLimit:
-db #$02 ; #$02 - 2 Rings (default)
-ProgressivePowerRingReplacement:
-db #$47 ; #$47 - 20 Rupees (default)
-ProgressiveGuardRingLimit:
-db #$02 ; #$02 - 2 Rings (default)
-ProgressiveGuardRingReplacement:
-db #$47 ; #$47 - 20 Rupees (default)
 ;--------------------------------------------------------------------------------
 ; 0x18009D - 0x18009F (unused)
 ;--------------------------------------------------------------------------------
@@ -1052,14 +1040,27 @@ ExtraHole_Entrance:
 db $00, $00, $00, $00, $00, $00, $00, $00
 db $00, $00, $00, $00, $00, $00, $00, $00
 ;--------------------------------------------------------------------------------
-; $308350 (0x180350) - $30834F (0x18034F)
+; $308350 (0x180350) - $30835F (0x18035F)
 ; Correspond to the three start options
 ; do not set for a starting location that is using a single entrance cave
 org $308350 ; PC 0x180350
 ShouldStartatExit:
 db $00, $00, $00
 ;================================================================================
-; 0x180350 - 0x1814FF (unused)
+; 0x180360 - 0x1803FF (unused)
+;================================================================================
+; $308400 (0x180400) - $3084FF (0x1804FF)
+; Settings for new items
+org $308400
+%AddProgressiveItemSettings()
+warnpc $308500
+
+org $308500
+%AddSettings()
+warnpc $308800
+
+;================================================================================
+; 0x180800 - 0x1814FF (unused)
 ;================================================================================
 ; $309500 (0x181500) - $309FFF (0x181FFF) original 0x39C bytes
 ; Replacement Ending Sequence Text Data

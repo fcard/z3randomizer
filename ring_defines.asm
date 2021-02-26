@@ -1,5 +1,6 @@
 ; Gameplay Settings
 
+!EnableRings = 1 ; Enable ring items
 !GuardRingDiminishingEffect = 0 ; Guard Ring effect goes down with armor upgrades (bool)
 !MinimumDamage = 01 ; Minimum damage after ring damage reduction
 
@@ -10,45 +11,63 @@
 
 ; Helper Variables
 
-function var(offset) = $7FF000+offset ; Generates an address to be used as a variable
+%NewVar(WhichMenu) ; Used to display and switch between the rings and ability menu
+                   ; * If set to 1, we are at the ability menu
+                   ; * If set to 2, we are at the rings menu
+                   ; * 0 is unused.
 
-!WhichMenu #= var(0) ; Used to display and switch between the rings and ability menu
-                         ; * If set to 1, we are at the ability menu
-                         ; * If set to 2, we are at the rings menu
-                         ; * 0 is unused.
-
-!UpdateMenuRingGraphics #= var(1) ; Controls if/how the menu rings graphics data is to
-                                  ; be transfered to VRAM.
-                                  ; * If set to 2, transfer the first half.
-                                  ; * If set to 1, transfer the second half.
-                                  ; * If set to 0, don't transfer.
-                                  ; As the data is transfered, the address will be
-                                  ; updated accordingly. If the data is compressed,
-                                  ; it must be uncompressed before this address is set.
+%NewVar(UpdateMenuRingGraphics) ; Controls if/how the menu rings graphics data is to
+                                ; be transfered to VRAM.
+                                ; * If set to 2, transfer the first half.
+                                ; * If set to 1, transfer the second half.
+                                ; * If set to 0, don't transfer.
+                                ; As the data is transfered, the address will be
+                                ; updated accordingly. If the data is compressed,
+                                ; it must be uncompressed before this address is set.
 
 
-!BombDamage #= var(2) ; Set to 1 when Link is damaged by bombs, used by the
-                      ; fire/flame rings to negate the damage.
+%NewVar(BombDamage) ; Set to 1 when Link is damaged by bombs, used by the
+                    ; fire/flame rings to negate the damage.
 
-!FireDamage #= var(3) ; Set to 1 when Link is damaged by fire, used by the
-                      ; fire/flame rings to half/negate the damage.
+%NewVar(FireDamage) ; Set to 1 when Link is damaged by fire, used by the
+                    ; fire/flame rings to half/negate the damage.
 
-!SpikeDamage #= var(4) ; Unused, meant to be set when Link is damaged by spikes,
-                       ; so new items can deal with that.
+%NewVar(SpikeDamage) ; Unused, meant to be set when Link is damaged by spikes,
+                     ; so new items can deal with that.
 
-!GarnishFire #= var(5) ; flag set by GarnishFireDamage,
-                       ; checked and reset by Garnish_CheckPlayerCollision
+%NewVar(GarnishFire) ; flag set by GarnishFireDamage,
+                     ; checked and reset by Garnish_CheckPlayerCollision
 
-; Ring Flags
+; SRAM Variables
 
-function svar(offset) = $7F6600+offset ; A variable that is saved to sram
+%NewSRAMVar(RupeeRingFlag)
+%NewSRAMVar(GravityRingFlag)
+%NewSRAMVar(FireRingFlag)
+%NewSRAMVar(LightRingFlag)
+%NewSRAMVar(PowerRingFlag)
+%NewSRAMVar(GuardRingFlag)
 
-!RupeeRingFlag   #= svar(0)
-!GravityRingFlag #= svar(1)
-!FireRingFlag    #= svar(2)
-!LightRingFlag   #= svar(3)
-!PowerRingFlag   #= svar(4)
-!GuardRingFlag   #= svar(5)
+; Settings (runtime)
 
-; Gravity Ring defines are in jump_defines.asm
+%NewSetting(EnableRingsRuntime, !EnableRings)
+
+; Item Constants
+
+if !EnableRings != 0
+    %NewItem(RupeeRing,   $4B, $02, !RupeeRingFlag,   $01, $02, $04, $0600, -4, 0)
+    %NewItem(GravityRing, $4C, $02, !GravityRingFlag, $01, $02, $04, $0630, -4, 0)
+    %NewItem(FireRing,    $4D, $02, !FireRingFlag,    $01, $01, $02, $0660, -4, 0)
+    %NewItem(FlameRing,   $4E, $02, !FireRingFlag,    $02, $01, $02, $0690, -4, 0)
+    %NewItem(LightRing,   $4F, $02, !LightRingFlag,   $01, $04, $08, $06C0, -4, 0)
+    %NewItem(PowerRing,   $50, $02, !PowerRingFlag,   $01, $04, $08, $06F0, -4, 0)
+    %NewItem(SwordRing,   $51, $02, !PowerRingFlag,   $02, $04, $08, $0720, -4, 0)
+    %NewItem(GuardRing,   $52, $02, !GuardRingFlag,   $01, $02, $04, $0750, -4, 0)
+    %NewItem(DiamondRing, $53, $02, !GuardRingFlag,   $02, $02, $04, $0900, -4, 0)
+
+    %NewProgressiveItem(ProgressiveFireRing,  $02, !FireRingFlag,  $01, -4, 0, 2, $47)
+    %NewProgressiveItem(ProgressivePowerRing, $02, !PowerRingFlag, $04, -4, 0, 2, $47)
+    %NewProgressiveItem(ProgressiveGuardRing, $02, !GuardRingFlag, $02, -4, 0, 2, $47)
+endif
+
+; other Gravity Ring defines are in jump_defines.asm
 
