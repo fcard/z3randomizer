@@ -171,6 +171,7 @@ ExtraMenuNMIUpdate:
     endif
     LDA $5E : CMP #$02 : BEQ .afterJumping ; don't jump when on stairs
     .skipStairCheck
+    LDA $4E : BNE .afterJumping ; don't jump on dungeon screen transitions
     LDA $10
     CMP #$07 : BEQ .handleJumping
     CMP #$09 : BEQ .handleJumping
