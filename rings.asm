@@ -1,7 +1,3 @@
-; Data
-RingsEnabled:
-    db 01 ; 00 - Rings disabled, 01 - Rings Enabled
-
 ; Properties for sprites for new items:
 ; 000000BF
 ; |||||||'--1 = Is Fire / 0 = Isn't Fire
@@ -447,7 +443,7 @@ RTL
 
 DrawLowerItemBox:
     JSL DrawAbilityText
-    LDA.l RingsEnabled : BEQ +
+    LDA.l !EnableRingsRuntime : BEQ +
         JSR DecompExtraMenuGfx
         LDA $F2 : AND $10 : BEQ +
         JSR DrawRingBox
@@ -458,7 +454,7 @@ DrawLowerItemBox:
     JSL DrawAbilityIcons
     JSL DrawMoonPearl
     JSL DrawProgressIcons
-    LDA.l RingsEnabled : BEQ ++
+    LDA.l !EnableRingsRuntime : BEQ ++
        JSR DrawRingSwitchText
     ++
 RTL
@@ -504,7 +500,7 @@ DrawAbilitiesBox:
     SEP #$30
     JSL DrawMoonPearl
     JSL DrawAbilityIcons
-    LDA.l RingsEnabled : BEQ .end
+    LDA.l !EnableRingsRuntime : BEQ .end
        JSR DrawRingSwitchText
     .end
 RTS
@@ -1646,6 +1642,7 @@ endmacro
 
 ; Routines
 
+if !EnableRings != 0
 AddReceivedRingGetItem:
     CMP.b #!RupeeRing_id : BNE + ; Rupee Ring
         ;Double Rupee Amount
@@ -1696,3 +1693,4 @@ GetRingPalette:
          %GetRingPalette(!GuardRingFlag, #!GuardRing_palette, #!DiamondRing_palette)
     +
 JML GetSpritePalette_ringReturn
+endif

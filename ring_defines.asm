@@ -1,6 +1,6 @@
 ; Gameplay Settings
 
-!EnableRings = 1 ; Enable ring items
+!EnableRings = 0 ; Enable ring items
 !GuardRingDiminishingEffect = 0 ; Guard Ring effect goes down with armor upgrades (bool)
 !MinimumDamage = 01 ; Minimum damage after ring damage reduction
 

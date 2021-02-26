@@ -435,6 +435,8 @@ AddReceivedItemExpandedGetItem:
   if !EnableRings != 0
       + JML AddReceivedRingGetItem
       .ringReturn
+  else
+      +
   endif
 	.done
 	PLX
