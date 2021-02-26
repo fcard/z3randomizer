@@ -1,6 +1,6 @@
 ; Gameplay Settings
 
-!EnableRings = 0 ; Enable ring items
+!EnableRings = 1 ; Enable ring items
 !GuardRingDiminishingEffect = 0 ; Guard Ring effect goes down with armor upgrades (bool)
 !MinimumDamage = 01 ; Minimum damage after ring damage reduction
 
@@ -37,6 +37,8 @@
 
 %NewVar(GarnishFire) ; flag set by GarnishFireDamage,
                      ; checked and reset by Garnish_CheckPlayerCollision
+
+%NewVar(OutdoorStairs) ; Set to 1 on outdoor stairs, and to 0 on indoor stairs
 
 ; SRAM Variables
 

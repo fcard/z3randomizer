@@ -167,7 +167,7 @@ ExtraMenuNMIUpdate:
     SEP #$20
 
     if !AllowStairJump != 0
-        LDA $58 : BNE .skipStairCheck
+        LDA !OutdoorStairs : BNE .skipStairCheck
     endif
     LDA $5E : CMP #$02 : BEQ .afterJumping ; don't jump when on stairs
     .skipStairCheck
@@ -750,6 +750,27 @@ CheckJumpingAboveWaterH:
 CheckJumpingAboveWaterV:
     %CheckJumpingAboveWater(CheckJumpingAboveWaterV.FallIntoWater,\
                             CheckJumpingAboveWaterV.JumpAboveWater)
+
+
+; Allow jumping into outdoor stairs
+CheckMidairBeforeEnteringStairs:
+    LDA !IsJumping : BNE .branch
+    LDA $46 : BEQ .branch
+        JML CheckMidairBeforeEnteringStairs.Continue
+    .branch
+JML CheckMidairBeforeEnteringStairs.Branch
+
+; Set outdoor stairs flag
+SetOutdoorStairsState:
+    LDA #1 : STA !OutdoorStairs
+    LDA #2 : STA $5E ; thing we wrote over
+RTL
+
+; Set indoor stairs flag
+SetIndoorStairsState:
+    LDA #0 : STA !OutdoorStairs
+    LDA #2 : STA $5E ; thing we wrote over
+RTL
 
 ; Don't reset Link's Z coordinates to $FFFF if he is jumping.
 ; This code is called periodically if he is not in a substate
@@ -1617,7 +1638,6 @@ macro GetRingId(location, id1, id2, getid)
 endmacro
 
 macro ProgressiveRingReplace(location, ring1, ring2)
-    WDM
     LDA.l <location> : %CmpRingLimit(<location>)
     BCC ?within_limit
         %LdaRingReplacement(<location>) : STA $02D8
@@ -1662,7 +1682,6 @@ AddReceivedRingGetItem:
 JML AddReceivedItemExpandedGetItem_ringReturn
 
 AddReceivedRing:
-    WDM
     CMP.b #!ProgressiveFireRing_id : BNE +
         %ProgressiveRingReplace(!FireRingFlag, #!FireRing_id, #!FlameRing_id)
     + CMP.b #!ProgressivePowerRing_id : BNE +

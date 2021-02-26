@@ -2844,6 +2844,21 @@ CheckJumpingAboveWaterV.FallIntoWater:
 org $07BF4D
 CheckJumpingAboveWaterV.JumpAboveWater:
 
+if !AllowStairJump != 0
+org $07C0A3
+JML CheckMidairBeforeEnteringStairs
+CheckMidairBeforeEnteringStairs.Continue:
+org $07C0B0
+CheckMidairBeforeEnteringStairs.Branch:
+
+org $07C0B6
+JSL SetOutdoorStairsState
+
+org $07BCA7
+JSL SetIndoorStairsState
+
+endif
+
 org $07C92F
 JML CheckJumpingAboveWaterH
 CheckJumpingAboveWaterH.FallIntoWater:
