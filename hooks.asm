@@ -2777,7 +2777,7 @@ JSL AncillaExt_LoadMaxSpriteCount
 ; Gravity Ring
 ;--------------------------------------------------------------------------------
 
-org $01C57E
+org $01C579
 JML ChangeTrapDoorState : NOP #2
 org $01C584
 ChangeTrapDoorState.ReturnPoint:
@@ -2907,6 +2907,9 @@ JML PlayWaterSound
 
 org $07D1D2
 JML PlayMireWaterSound
+
+org $07D1D9
+JML PlayWaterSound
 
 org $07D2AE
 PlayTileSound.RTS:

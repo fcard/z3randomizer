@@ -166,19 +166,20 @@ RTL
 ExtraMenuNMIUpdate:
     SEP #$20
 
-    if !AllowStairJump != 0
-        LDA !OutdoorStairs : BNE .skipStairCheck
+    if !AllowStairJump == 0
+        LDA $5E : CMP #$02 : BEQ .afterJumping ; don't jump when on stairs
     endif
-    LDA $5E : CMP #$02 : BEQ .afterJumping ; don't jump when on stairs
-    .skipStairCheck
     LDA $4E : BNE .afterJumping ; don't jump on dungeon screen transitions
     LDA $10
-    CMP #$07 : BEQ .handleJumping
-    CMP #$09 : BEQ .handleJumping
-    CMP #$0B : BEQ .handleJumping
+    CMP #$07 : BEQ .correctModule
+    CMP #$09 : BEQ .correctModule
+    CMP #$0B : BEQ .correctModule
     CMP #$06 : BEQ .resetJumping
     CMP #$08 : BEQ .resetJumping
     CMP #$0A : BEQ .resetJumping
+        BRA .afterJumping
+    .correctModule
+    LDA $11 : BEQ .handleJumping ; only jump on submodule 0
         BRA .afterJumping
     .resetJumping
         %M_STZ(!IsJumping,0)
@@ -663,11 +664,20 @@ RTL
 ; Handle jumping over a button that requires
 ; Link to be standing on it.
 ChangeTrapDoorState:
-    LDA !IsJumping : AND #$00FF : BNE +
+    CPX #$0000 : BNE .openDoor
+    ;.closeDoor
+    LDA !IsJumping : AND #$00FF : BEQ .openDoor
+        LDX #$0001
+        CPX $0468 : BEQ .done
+        BRA .skipJumpCheck
+    .openDoor
+    CPX $0468 : BEQ .done
+    LDA !IsJumping : AND #$00FF : BNE .done
+        .skipJumpCheck
         STX $0468 ; thing we wrote over
         STZ $068E ; ^
         JML ChangeTrapDoorState.ReturnPoint
-    +
+    .done
 JML ChangeTrapDoorState.EndPoint
 
 ; Handle jumping over a button that keeps
@@ -1101,6 +1111,7 @@ CheckJumpButtonPress:
         LDA .values+3, X : STA $28
 
         STZ $0351 ; Remove water/grass effects
+        STZ $0430 ; Unpress buttons
 
         ; use dash jump speed/distance if we're dashing
         LDA $5E : CMP #$10 : BNE +

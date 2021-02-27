@@ -1,7 +1,7 @@
 !PrintItemSettings = 0
 
 !CurrentItemId #= $B0
-!CurrentSpriteId #= $4B
+!CurrentSpriteId #= $4A
 
 !ItemDataType_sprite = byte
 !ItemDataType_special_sprite = byte
@@ -194,7 +194,7 @@ endmacro
 
 macro AddSpriteBufferPos()
     !id #= $4B
-    while !id < !CurrentSpriteId
+    while !id <= !CurrentSpriteId
         dw !{SpriteBufferPos!{id}}
         !id #= !id+1
     endif
