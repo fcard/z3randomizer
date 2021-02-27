@@ -87,15 +87,12 @@ db #$20, #$19, #$08, #$31 ; year/month/day
 ;!REG_MUSIC_CONTROL = $012C
 !REG_MUSIC_CONTROL_REQUEST = $012C
 
-incsrc newitem_macro.asm
-incsrc var_macro.asm
-incsrc multisize_ops.asm
-incsrc ring_defines.asm
-incsrc jump_defines.asm
+incsrc newitems/defines.asm
 
 ;================================================================================
 
 incsrc hooks.asm
+incsrc newitems/hooks.asm
 incsrc treekid.asm
 incsrc spriteswap.asm
 incsrc hashalphabethooks.asm
@@ -203,9 +200,7 @@ incsrc servicerequest.asm
 incsrc elder.asm
 incsrc toast.asm
 incsrc darkroomitems.asm
-incsrc player_sfx_long.asm
-incsrc rings.asm
-incsrc ancilla_extended.asm
+incsrc newitems/main.asm
 warnpc $A58000
 
 ;org $228000 ; contrib area
@@ -279,20 +274,6 @@ org $31E000
 InvertedCastleHole: ;address used by front end. DO NOT MOVE!
 incbin sheet73.gfx
 warnpc $31E501
-
-org $31F000
-GFX_Rings:
-if !CompressMenuRingsGFX != 0
-    incbin menurings.gfx
-else
-    incbin menurings.bin
-endif
-warnpc $31F400
-
-org $31F400
-GFX_RingsOverworld:
-incbin rings.gfx
-warnpc $320000
 
 org $338000
 GFX_HUD_Palette:
@@ -423,12 +404,12 @@ db GFX_HUD_Main
 
 ; old ancilla tables, moved to ancilla_extended.asm
 ; use for new sprite sheets
-org $088380 ; Rings H
-db GFX_RingsOverworld>>16
-org $0883A0 ; Rings M
-db GFX_RingsOverworld>>8
-org $0883C0 ; Rings L
-db GFX_RingsOverworld
+org $0883A5 ; $0883A5-$0883C4: New Item Sprites H
+%AddSpriteSheetsHigh()
+org $0883C5 ; $0883C5-$0883E4: New Item Sprites M
+%AddSpriteSheetsMiddle()
+org $0883E5 ; $0883E5-$088404: New Item Sprites L
+%AddSpriteSheetsLow()
 ;================================================================================
 org $008781
 UseImplicitRegIndexedLocalJumpTable:

@@ -90,9 +90,9 @@ DecompExtra:
         PHB
         LDA #$08 : PHA : PLB
         TYA : SBC #$6C : TAY
-        LDA $8380, Y : STA $0000CA
-        LDA $83A0, Y : STA $0000C9
-        LDA $83C0, Y : STA $0000C8
+        LDA $83A5, Y : STA $0000CA
+        LDA $83C5, Y : STA $0000C9
+        LDA $83E5, Y : STA $0000C8
         PLB
         RTL
     +
