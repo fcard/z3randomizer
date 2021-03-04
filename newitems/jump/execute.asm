@@ -83,39 +83,39 @@ ExecuteJump:
            PLB
 
         ; Jump acceleration on non-starting directions
-            LDA !JumpTimer : CMP #$19 : BCS .cannotAccelerate
-            LDA $F0 : AND !JumpNonStartingDirections : BEQ +
-                LDA !JumpDirectionType : AND #02 : BNE ++
-                    LDA $F0 : AND #$04 : BEQ +++
-                        LDA #$10 : STA $27
-                        LDA !JumpForwardDirection : ORA #$04 : STA !JumpForwardDirection
-                        LDA !JumpNonStartingDirections : AND #($0F-$0C)
-                        STA !JumpNonStartingDirections
-                        BRA ++
-                    +++
-                    LDA $F0 : AND #$08 : BEQ +++
-                        LDA #-$10 : STA $27
-                        LDA !JumpForwardDirection : ORA #$08 : STA !JumpForwardDirection
-                        LDA !JumpNonStartingDirections : AND #($0F-$0C)
-                        STA !JumpNonStartingDirections
-                    +++
-                ++
-                LDA !JumpDirectionType : AND #01 : BNE ++
-                    LDA $F0 : AND #$01 : BEQ +++
-                        LDA #$10 : STA $28
-                        LDA !JumpForwardDirection : ORA #$01 : STA !JumpForwardDirection
-                        LDA !JumpNonStartingDirections : AND #($0F-$03)
-                        STA !JumpNonStartingDirections
-                        BRA ++
-                    +++
-                    LDA $F0 : AND #$02 : BEQ +++
-                        LDA #-$10 : STA $28
-                        LDA !JumpForwardDirection : ORA #$02 : STA !JumpForwardDirection
-                        LDA !JumpNonStartingDirections : AND #($0F-$03)
-                        STA !JumpNonStartingDirections
-                    +++
-                ++
+            LDA !JumpTimer : CMP #$19 : BCC +
+                BRL .cannotAccelerate
             +
+            LDA !JumpDirectionType : AND #02 : BNE ++
+                LDA $F0 : AND #$04 : BEQ +++
+                    LDA #$10 : STA $27
+                    LDA !JumpForwardDirection : ORA #$04 : STA !JumpForwardDirection
+                    LDA !JumpInverseDirection : ORA #$08 : STA !JumpInverseDirection
+                    LDA !JumpDirectionType    : ORA #$02 : STA !JumpDirectionType
+                    BRA ++
+                +++
+                LDA $F0 : AND #$08 : BEQ +++
+                    LDA #-$10 : STA $27
+                    LDA !JumpForwardDirection : ORA #$08 : STA !JumpForwardDirection
+                    LDA !JumpInverseDirection : ORA #$04 : STA !JumpInverseDirection
+                    LDA !JumpDirectionType    : ORA #$02 : STA !JumpDirectionType
+                +++
+            ++
+            LDA !JumpDirectionType : AND #01 : BNE ++
+                LDA $F0 : AND #$01 : BEQ +++
+                    LDA #$10 : STA $28
+                    LDA !JumpForwardDirection : ORA #$01 : STA !JumpForwardDirection
+                    LDA !JumpInverseDirection : ORA #$02 : STA !JumpInverseDirection
+                    LDA !JumpDirectionType    : ORA #$01 : STA !JumpDirectionType
+                    BRA ++
+                +++
+                LDA $F0 : AND #$02 : BEQ +++
+                    LDA #-$10 : STA $28
+                    LDA !JumpForwardDirection : ORA #$02 : STA !JumpForwardDirection
+                    LDA !JumpInverseDirection : ORA #$01 : STA !JumpInverseDirection
+                    LDA !JumpDirectionType    : ORA #$01 : STA !JumpDirectionType
+                +++
+            ++
             .cannotAccelerate
 
         ; Calculate jump decceleration depending on current input
@@ -127,28 +127,33 @@ ExecuteJump:
             LDA $F0 : AND !JumpForwardDirection : BEQ +
                 DEX
             +
-            STX $00
-
+            if !StatueSlowsJump != 0
+                LDA $5E : CMP #$08 : BNE +
+                    INX
+                +
+            endif
+            STX $4202
+            LDA #!JumpDeccel : STA $4203
         ;.verticalMovement
             LDA !JumpDirectionType : AND #02 : BEQ .horizontalMovement
             LDA $27
             BEQ .horizontalMovement
             BPL .verticalPositive
             ;.verticalNegative
-                LDA $27 : CLC : ADC $00 : STA $27
+                LDA $27 : CLC : ADC $4217 : STA $27
                 BRA .horizontalMovement
             .verticalPositive
-                LDA $27 : SEC : SBC $00 : STA $27
+                LDA $27 : SEC : SBC $4217 : STA $27
         .horizontalMovement
             LDA !JumpDirectionType : AND #01 : BEQ .done
             LDA $28
             BEQ .done
             BPL .horizontalPositive
             ;.horizontalNegative
-                LDA $28 : CLC : ADC $00 : STA $28
+                LDA $28 : CLC : ADC $4217 : STA $28
                 BRA .done
             .horizontalPositive
-                LDA $28 : SEC : SBC $00 : STA $28
+                LDA $28 : SEC : SBC $4217 : STA $28
     .done
 RTL
   .z_coord

@@ -51,7 +51,6 @@ CheckJumpButtonPress:
         PHB : PHK : PLB
         LDA $F0 : ASL : ASL : TAX
     .loadValues
-        LDA .values+0, X : AND #$0F : STA !JumpNonStartingDirections
         LDA .values+0, X : LSR #$04 : STA !JumpDirectionType
         LDA .values+1, X : AND #$0F : STA !JumpForwardDirection
         LDA .values+1, X : LSR #$04 : STA !JumpInverseDirection

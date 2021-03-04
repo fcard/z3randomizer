@@ -6,6 +6,7 @@
 !AllowHookshotWaterJump = 0 ; Allow using hookshot while jumping above deep water
 !AllowStairJump = 1 ; Allow jumping while on outdoor staircases
 !AllowCutsceneJump = 0 ; Allow jumping while on cutscenes
+!StatueSlowsJump = 0 ; Pushing a statue slows down jump
 
 ; !AllowBunnyJump: Allow Bunny Link to jump with the R button
 
@@ -37,18 +38,18 @@ function jumpvar(offset) = $7C+offset
 
 !JumpInverseDirection #= jumpvar(0)
 !JumpForwardDirection #= jumpvar(1)
-!JumpNonStartingDirections #= jumpvar(2)
-!JumpDirectionType #= jumpvar(3)
-!IsJumping #= jumpvar(4)
-!JumpTimer #= jumpvar(5)
-!JumpingAboveWater #= jumpvar(6)
-!JumpFrame #= jumpvar(7)
+!JumpDirectionType #= jumpvar(2)
+!IsJumping #= jumpvar(3)
+!JumpTimer #= jumpvar(4)
+!JumpingAboveWater #= jumpvar(5)
+!JumpFrame #= jumpvar(6)
 
 ; Constants
 
-!JumpDistance = $30
-!JumpDistanceDash = $60
-!JumpDistanceDiagonal = $28
+!JumpDistance = $20
+!JumpDistanceDash = $40
+!JumpDistanceDiagonal = $18
+!JumpDeccel = $68
 
 ; Helper macros
 

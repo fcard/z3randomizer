@@ -9,24 +9,17 @@ org $078003
 
 ; buttons
 
-org $01C579
-JML ChangeTrapDoorState : NOP #2
-org $01C584
-ChangeTrapDoorState.ReturnPoint:
-org $01C596
-ChangeTrapDoorState.EndPoint:
+org $01CD41
+JML CheckJumpingAboveButton : NOP
+CheckJumpingAboveButton_returnPoint:
 
-org $01C59B
-JML PressGroundSwitch : NOP
-PressGroundSwitch.ReturnPoint:
-org $01C5C4
-PressGroundSwitch.EndPoint:
+org $01CDD4
+JML CheckJumpingAboveButton2 : NOP
+CheckJumpingAboveButton2_returnPoint:
 
-org $01CC3A
-JML ChangePitGroupsInFloor : NOP
-ChangePitGroupsInFloor.ReturnPoint:
-org $01CC58
-ChangePitGroupsInFloor.EndPoint:
+org $01CDA0
+CheckJumpingAboveButton.BranchPoint:
+
 
 ; soldier
 
